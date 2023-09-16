@@ -45,13 +45,15 @@ def pdf2math(inputPDF, mathOutputPath):
     return False
 
 if __name__ == "__main__":
-    input_file = 'testPage.pdf'
+    input_file = 'testSample.jpeg'
     format_input(input_file)
+    name, extension = os.path.splitext(input_file)
+
 
     current_directory = os.getcwd()
-    formatted_pdf = os.path.join(current_directory, 'formatted_outputs', input_file)
+    formatted_pdf = os.path.join(current_directory, 'formatted_outputs', f'{name}.pdf')
 
 
-    pdf2math(formatted_pdf, f'{current_directory}/outputTest.txt')
+    pdf2math(formatted_pdf, f'{current_directory}/{name}.txt')
 
 
