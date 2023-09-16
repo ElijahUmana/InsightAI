@@ -4,12 +4,22 @@ import os
 import shutil
 import subprocess
 
+from PIL import Image
+
+def png2pdf(png, output_path):
+    """
+    returns pdf file path
+    """
+    image_1 = Image.open(f'{png}')
+    im_1 = image_1.convert('RGB')
+    im_1.save(f'{output_path}.pdf')
+
 def format_input(input_file):
     current_directory = os.getcwd()
     name, extension = os.path.splitext(input_file)
 
-    input_file_path = os.path.join(current_directory, 'inputs', input_file)
-    output_directory = os.path.join(current_directory, 'formatted_outputs', name)
+    input_file_path = os.path.join(current_directory, input_file)
+    output_directory = os.path.join(current_directory, f'formatted_{name}')
 
 
     if not extension.lower().endswith('.pdf'):
@@ -45,15 +55,25 @@ def pdf2math(inputPDF, mathOutputPath):
     return False
 
 if __name__ == "__main__":
-    input_file = 'testSample.jpeg'
+    current_directory = os.getcwd()
+    input_file = 'testPage.pdf'
     format_input(input_file)
     name, extension = os.path.splitext(input_file)
 
 
-    current_directory = os.getcwd()
-    formatted_pdf = os.path.join(current_directory, 'formatted_outputs', f'{name}.pdf')
+    formatted_pdf = os.path.join(current_directory,f'formatted_{name}.pdf')
 
 
-    pdf2math(formatted_pdf, f'{current_directory}/{name}.txt')
+    # pdf2math(formatted_pdf, f'{current_directory}/{name}.txt')
+
+    from gradio_client import Client
+
+client = Client("https://ysharma-nougat.hf.space/")
+result = client.predict(
+    formatted_pdf,
+    "",
+    fn_index=0
+)
+print(result)
 
 
