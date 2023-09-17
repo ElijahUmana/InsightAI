@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import config
 from utils import identify_learning_style_and_hobby, speech_to_text, get_gpt_response, text_to_voice, extract_image_content
 import os
+import base64
 
 # Initialize Flask app and set Google credentials for cloud services
 app = Flask(__name__)
@@ -104,13 +105,17 @@ def generate_response():
 
     # Convert the text response to audio
     voice_response_path = text_to_voice(gpt_response)
+    
+    # Convert the .wav file to base64 before sending
+    with open(voice_response_path, 'rb') as file:
+        wav_data = base64.b64encode(file.read()).decode('utf-8')
 
     # Cleanup: remove the saved files after processing
     os.remove(image_path)
     os.remove(audio_query_path)
 
     # Return a success message and the path to the generated audio response
-    return jsonify({"message": "Response generated successfully", "audio_path": voice_response_path}), 200
+    return jsonify({"message": "Response generated successfully", "audio_path": wav_data}), 200
 
 # Entry point for running the Flask app
 if __name__ == '__main__':
