@@ -115,8 +115,8 @@ def extract_image_content(image_path):
                 "app_key": APP_KEY
             }
         )
-    data = response.json()
-    return data.get('latex_styled', '')  # Extracting the formatted content, adjust as necessary based on the response format
+    data = json.dumps(response.json(), indent=4, sort_keys=True)
+    return data # Extracting the formatted content, adjust as necessary based on the response format
 
 def get_gpt_response(transcript, image_content, user_style, user_hobby):
     ENDPOINT = "https://api.openai.com/v1/chat/completions"
