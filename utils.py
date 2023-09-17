@@ -124,10 +124,10 @@ def get_gpt_response(transcript, image_content, user_style, user_hobby):
         "Authorization": f"Bearer {config.OPENAI_API_KEY}",
     }
     
-    prompt = f"Given that the user said '{transcript}' and referred to the content '{image_content}', and they prefer explanations in a '{user_style}' style using analogies related to '{user_hobby}', how would you explain the concept to them?"
+    prompt = f"Given that the user said '{transcript}' and referred to the content '{image_content}', and they prefer explanations in a '{user_style}' learning style using analogies related to '{user_hobby}', explain the concept to them."
 
     messages = [
-        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "system", "content": "You are a helpful personal tutor that can understand the the image context that is either returned in latex or SMILES and use your understanding of that to answer the users query/confusion according to their learning style and analogies using their hobbies"},
         {"role": "user", "content": prompt}
     ]
 
