@@ -44,6 +44,7 @@ def onboarding():
     # Return a success message along with the extracted data
     return jsonify({"message": "Onboarding successful", 
                     "style": style_summary, 
+                    
                     "experience": experience_summary}), 200
 
 
