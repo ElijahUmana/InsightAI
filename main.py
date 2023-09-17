@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import config
-from utils import identify_learning_style_and_hobby, speech_to_text, get_gpt_response, text_to_voice
+from utils import identify_learning_style_and_hobby, speech_to_text, get_gpt_response, text_to_voice, extract_image_content
 import os
 
 # Initialize Flask app and set Google credentials for cloud services

@@ -101,22 +101,22 @@ def extract_image_content(image_path):
     This function currently extracts formatted content in the form of LaTeX, 
     but can be adjusted as per the API's capabilities.
     """
-    with open(image_path, 'rb') as image_file:
-        response = requests.post("https://api.mathpix.com/v3/text",
-            files={"file": image_file},
-            data={
-              "options_json": json.dumps({
-                "math_inline_delimiters": ["$", "$"],
-                "rm_spaces": True
-              })
-            },
-            headers={
-                "app_id": APP_ID,
-                "app_key": APP_KEY
-            }
-        )
-    data = json.dumps(response.json(), indent=4, sort_keys=True)
-    return data # Extracting the formatted content, adjust as necessary based on the response format
+    #!/usr/bin/env python
+
+    r = requests.post("https://api.mathpix.com/v3/text",
+    files={"file": open(image_path,"rb")},
+    data={
+      "options_json": json.dumps({
+        "math_inline_delimiters": ["$", "$"],
+        "rm_spaces": True
+      })
+    },
+    headers={
+        "app_id": APP_ID,
+        "app_key": APP_KEY
+    }
+)
+    return json.dumps(r.json(), indent=4, sort_keys=True)
 
 def get_gpt_response(transcript, image_content, user_style, user_hobby):
     ENDPOINT = "https://api.openai.com/v1/chat/completions"
