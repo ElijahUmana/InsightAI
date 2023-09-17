@@ -119,12 +119,6 @@ def extract_image_content(image_path):
     return data.get('latex_styled', '')  # Extracting the formatted content, adjust as necessary based on the response format
 
 def get_gpt_response(transcript, image_content, user_style, user_hobby):
-     """
-    Generate a response using OpenAI's GPT-4 model.
-    The response is based on the provided transcript, image content, user's preferred 
-    explanation style, and user's hobby.
-    """
-    
     ENDPOINT = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {config.OPENAI_API_KEY}",
