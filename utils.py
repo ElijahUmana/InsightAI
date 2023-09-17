@@ -118,13 +118,13 @@ def extract_image_content(image_path):
 )
     return json.dumps(r.json(), indent=4, sort_keys=True)
 
-def get_gpt_response(transcript, image_content, user_style, user_hobby):
+def get_gpt_response(user_query, image_content, user_style, user_hobby):
     ENDPOINT = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {config.OPENAI_API_KEY}",
     }
     
-    prompt = f"Given that the user said '{transcript}' and referred to the content '{image_content}', and they prefer explanations in a '{user_style}' learning style using analogies related to '{user_hobby}', explain the concept to them."
+    prompt = f"Given that the user said '{user_query}' and referred to the content '{image_content}', and they prefer explanations in a '{user_style}' learning style using analogies related to '{user_hobby}', explain the concept to them."
 
     messages = [
         {"role": "system", "content": "You are a helpful personal tutor that can understand the the image context that is either returned in latex or SMILES and use your understanding of that to answer the users query/confusion according to their learning style and analogies using their hobbies"},

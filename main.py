@@ -76,10 +76,20 @@ def generate_response():
     is then converted to an audio format.
     """
 
-    # Retrieve the uploaded image from the request
+    # Retrieve the uploaded image and audio query from the request
     image_file = request.files.get('image_file')
+    audio_query_file = request.files.get('audio_query')
+    
+    # Save the uploaded image temporarily
     image_path = "curr.png"
-    image_file.save(image_path)  # Save the uploaded image temporarily
+    image_file.save(image_path)  
+
+    # Save the audio query temporarily
+    audio_query_path = "audio_query.wav"
+    audio_query_file.save(audio_query_path)
+
+    # Convert the audio query to text
+    user_query = speech_to_text(audio_query_path)
 
     # Extract content from the image using Mathpix API
     image_content = extract_image_content(image_path)
@@ -89,14 +99,15 @@ def generate_response():
     user_style = user_data.get('style', '')
     user_hobby = user_data.get('hobby', '')
 
-    # Generate a GPT-4 response based on the image content and user data
-    gpt_response = get_gpt_response('', image_content, user_style, user_hobby)
+    # Generate a GPT-4 response based on the image content, user query, and user data
+    gpt_response = get_gpt_response(user_query, image_content, user_style, user_hobby)
 
     # Convert the text response to audio
     voice_response_path = text_to_voice(gpt_response)
 
-    # Cleanup: remove the saved image after processing
+    # Cleanup: remove the saved files after processing
     os.remove(image_path)
+    os.remove(audio_query_path)
 
     # Return a success message and the path to the generated audio response
     return jsonify({"message": "Response generated successfully", "audio_path": voice_response_path}), 200
