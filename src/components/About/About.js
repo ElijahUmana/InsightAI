@@ -1,281 +1,232 @@
-import React, { useCallback, useState } from "react";
-import { Container, Row, Col } from "react-bootstrap";
-import { useDropzone } from "react-dropzone";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import ReactLoading from "react-loading";
-import { Link } from "react-router-dom";
-import Nav from "react-bootstrap/Nav";
 import DragDropFiles from "./DragDropFiles";
 import "./About.css";
-import Recorder from "recorder-js";
-import AudioReactRecorder, { RecordState } from "audio-react-recorder";
 import axios from "axios";
 import ReactAudioPlayer from "react-audio-player";
-import { Robot } from "react-bootstrap-icons";
-import "./robot.svg";
+import Recorder from 'recorder-js';
 
-// import {  } from 'bootstrap-icons';
-const MicRecorder = require("mic-recorder-to-mp3");
-const ROBOT = "./robot.svg";
-function About(props) {
-  const [text, setText] = useState("");
-  const [isRecording, setIsRecording] = useState(null);
+function About() {
+  const [record, setRecord] = useState(false);
+  const [audioURL, setAudioURL] = useState('');
+  const [audio, setAudio] = useState(null);
   const [isPredict, setIsPredict] = useState(false);
   const [currFiles, setCurrFiles] = useState(null);
-  const [isUploaded, setIsUploaded] = useState(false);
-  const [currentRecording, setCurrentRecording] = useState(null);
   const [processing, setProcessing] = useState(false);
-  const [ocrText, setOcrText] = useState("");
-  const [next, setIsNext] = useState(false);
   const [received, setReceived] = useState(false);
-  const [audio, setAudio] = useState(null);
-  const [audioURL, setAudioURL] = useState(null);
-  const [loadChat, setLoadChat] = useState(true);
+  const [isLLMLoading, setIsLLMLoading] = useState(false);
+  const [loadChat, setLoadChat] = useState(false);
   const [talking, setTalking] = useState(false);
+  const [transcriptionId, setTranscriptionId] = useState(null);
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  const [recorder, setRecorder] = useState(null);
+  const [responseReceived, setResponseReceived] = useState(false);
+  const [timeoutId, setTimeoutId] = useState(null);
+  const [pollingAttempts, setPollingAttempts] = useState(0);
+  const MAX_POLLING_ATTEMPTS = 6; // Adjust this based on your requirements
+  const [pollingInProgress, setPollingInProgress] = useState(false);
 
-  function transcribe() {
-    console.log("axios");
-    axios
-      .post("/transcribe")
-      .then((response) => {
-        console.log(response);
-      })
-      .catch((error) => {
-        if (error.response) {
-          console.log(error.response);
-          console.log(error.response.status);
-          console.log(error.response.headers);
-        }
-      });
-  }
-  console.log(props, "styleText");
-  const recorder = new MicRecorder({
-    bitRate: 128,
-  });
-  const onDrop = useCallback((acceptedFiles) => {
-    // Do something with the uploaded file, e.g., send it to a server
-    console.log(acceptedFiles);
-  }, []);
+function base64ToBlob(base64, mimeType='') {
+  const byteCharacters = atob(base64);
+  const byteNumbers = new Array(byteCharacters.length);
 
-  const handleTextChange = (event) => {
-    setText(event.target.value);
-  };
-
-  const obtainLLMResponse = () => {
-    // /generate-response
-    console.log("LLM");
-    setTalking(false);
-    axios
-      .post("/generate-response", { audio_query: ocrText })
-      .then((response) => {
-        console.log("LLM");
-        console.log(response);
-        setAudio(response.data.audio_path);
-        setLoadChat(false);
-        setTalking(true);
-      })
-      .catch((error) => {
-        if (error.response) {
-          console.log(error.response);
-          console.log(error.response.status);
-          console.log(error.response.headers);
-        }
-      });
-  };
-
-  function downloadAudioBlob(audioBlob) {
-    const blobData = audioBlob;
-    setProcessing(true);
-    const formData = new FormData();
-    formData.append("audio", blobData.blob, "audio.wav");
-    // Send the Blob data to your Flask backend using Axios
-    axios
-      .post("/save-recording", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data", // Make sure to set the content type
-        },
-      })
-      .then((response) => {
-        console.log(response);
-        setProcessing(false);
-      })
-      .catch((error) => {
-        console.error("Failed to upload Blob data to Flask:", error);
-        setProcessing(false);
-        // Handle error
-      });
+  for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
   }
 
-  const onStop = (audioData) => {
-    console.log("audioData", audioData);
-    setCurrentRecording(audioData);
-    downloadAudioBlob(audioData);
-    let pred = audioData !== null && currFiles !== null ? true : false;
-    console.log(audioData);
-    console.log(currFiles);
-    console.log("pred");
-    console.log(pred);
-    setIsPredict(pred);
-    // transcribe();
-  };
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], {type: mimeType});
+}
 
-  const startRecording = async () => {
-    try {
-      setIsRecording(RecordState.START);
-    } catch (error) {
-      console.error("Failed to start recording:", error);
+
+const checkResponseReady = useCallback(async () => {
+  clearTimeout(timeoutId);  // Clear the timeout to prevent overlapping
+  console.log('Polling attempt:', pollingAttempts + 1);
+
+  if (responseReceived || pollingAttempts >= MAX_POLLING_ATTEMPTS) {
+      console.error(pollingAttempts >= MAX_POLLING_ATTEMPTS ? "Max polling attempts reached" : "Response received");
+      setProcessing(false);
+      setPollingInProgress(false); // Ensure polling doesn't proceed
+      setPollingAttempts(0); // Reset the attempts
+      return;
+  }
+
+  try {
+      const response = await axios.get(`http://127.0.0.1:5000/get-response/${transcriptionId}`);
+      
+      if (response.status === 200) {
+          const responseData = response.data;
+          if(responseData.status === 'ready') {
+              console.log('Audio response received.');
+              const audioBlob = base64ToBlob(responseData.audio, 'audio/wav');  // Convert base64 to blob
+              const audioURL = URL.createObjectURL(audioBlob);
+              setAudio(audioURL); 
+              setProcessing(false);
+              setTalking(true);
+              setResponseReceived(true);
+              setPollingAttempts(0); 
+              clearTimeout(timeoutId);
+              setPollingInProgress(false);  
+          } else {
+              console.error('Response received but not ready.');
+              setProcessing(false);
+          }
+      } else if (response.status === 202) { 
+          console.log('Response not ready, scheduling another poll.');
+          const id = setTimeout(checkResponseReady, 10000); 
+          setTimeoutId(id);
+          setPollingAttempts(prev => prev + 1);
+      } else {
+          console.error('Unexpected response status:', response.status); 
+          setProcessing(false);
+      }
+  } catch (error) {
+      console.error("Error checking response readiness:", error);
+      setProcessing(false);
+      clearTimeout(timeoutId);
+  }
+}, [transcriptionId, responseReceived, timeoutId, pollingAttempts, pollingInProgress]);
+
+
+// This useEffect sets up polling when transcriptionId changes
+useEffect(() => {
+  if (transcriptionId && !pollingInProgress && !responseReceived) {
+      console.log('Transcription ID received, starting to poll for response.');
+      setPollingInProgress(true); 
+      checkResponseReady();
+  }
+
+  return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+  };
+}, [transcriptionId, pollingInProgress, responseReceived]);
+
+
+// This useEffect listens for the responseReceived state and cleans up
+useEffect(() => {
+  if (responseReceived) {
+      clearTimeout(timeoutId); // Ensure that polling is stopped if a response is received
+      setPollingInProgress(false);
+  }
+}, [responseReceived]);
+
+const obtainLLMResponse = async () => {
+    if (!audioURL || !currFiles) {
+        console.error("No audioURL or image set. Please ensure you've recorded audio and uploaded an image.");
+        return;
     }
+
+    const audioBlob = await fetch(audioURL).then(response => response.blob());
+    const formData = new FormData();
+    formData.append('audio_query', audioBlob, 'audio.wav');
+    formData.append("file", currFiles[0]);
+
+    setProcessing(true);
+    setLoadChat(true);
+
+    try {
+        const response = await axios.post("http://127.0.0.1:5000/generate-response", formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        console.log('Response from /generate-response received.');
+        setTranscriptionId(response.data.transcription_id);
+        setLoadChat(false);
+        setPollingInProgress(false); // Reset polling in progress flag after obtaining response
+    } catch (error) {
+        console.error("Error in obtainLLMResponse:", error.response ? error.response.data : error.message);
+        setProcessing(false);
+        setLoadChat(false);
+    }
+};
+
+
+
+  const startRecording = () => {
+    setAudioURL('');
+    setAudio(null);
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then((stream) => {
+        const rec = new Recorder(audioContext);
+        rec.init(stream).then(() => {
+          rec.start();
+          setRecorder(rec);
+          setRecord(true);
+        });
+      });
   };
 
-  const stopRecording = async () => {
-    try {
-      setIsRecording(RecordState.STOP);
-    } catch (error) {
-      console.error("Failed to stop recording:", error);
+  const stopRecording = () => {
+    if (recorder) {
+      recorder.stop()
+        .then(({ blob }) => {
+          const audioURL = URL.createObjectURL(blob);
+          setAudioURL(audioURL);
+          setRecord(false);
+          setIsPredict(true);
+        });
     }
   };
 
   const handleFile = (files, uploaded) => {
     setCurrFiles(files);
-    setIsUploaded(uploaded);
-    let pred = currentRecording !== null && files !== null ? true : false;
-    console.log("pred");
-    console.log(pred);
+    let pred = audioURL && files !== null ? true : false;
     setIsPredict(pred);
-  };
-
-  const predict = async () => {
-    const formData = new FormData();
-    formData.append("audio", currentRecording.blob, "audio.wav");
-    formData.append("file", currFiles[0]);
-    console.log("predict");
-    setProcessing(true);
-    setLoadChat(true);
-    await axios
-      .post("/predict", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data", // Make sure to set the content type
-        },
-      })
-      .then((response) => {
-        console.log(response);
-        setOcrText(response.data.text);
-        setIsNext(true);
-        setProcessing(false);
-        setReceived(true);
-      })
-      .catch((error) => {
-        console.error("Failed to upload Blob data to Flask:", error);
-        setProcessing(false);
-        // Handle error
-      });
-    await obtainLLMResponse();
+    if (uploaded) {
+      console.log("Image uploaded and processed.");
+      setReceived(true);  
+    }
   };
 
   return (
     <div className="about-container">
       <div className="dropzone-container">
-        <DragDropFiles
-          handleFile={(files, uploaded) => handleFile(files, uploaded)}
-        />
-        {/* <div className="multi-word-input-container">
-          <textarea
-            className="multi-word-input"
-            placeholder="Enter your prompt"
-            value={text}
-            onChange={handleTextChange}
-          />
-        </div> */}
-        <h1 className="record-title">Audio Recorder</h1>
-        {isRecording == RecordState.START ? (
-          <>
-            <button className="recording-button" onClick={stopRecording}>
-              Stop Recording
-            </button>
-            <button className="predict-button" disabled={!isPredict}>
-              Predict
-            </button>
-          </>
+        <DragDropFiles handleFile={handleFile} />
+        <h1 className="record-title">Ask any question about your image!</h1>
+        {record ? (
+          <button className="recording-button" onClick={stopRecording}>Stop Speaking</button>
         ) : (
           <>
-            <button className="recording-button" onClick={startRecording}>
-              Start Recording
-            </button>
-            <button
-              className="predict-button"
-              disabled={!isPredict}
-              onClick={predict}
-            >
-              Get Answer
-            </button>
+            <button className="recording-button" onClick={startRecording}>Start Speaking</button>
+            {audioURL && <button className="predict-button" disabled={!isPredict} onClick={obtainLLMResponse}>Get Answer</button>}
           </>
-        )}
-        {/* {audioURL && (
-          <audio controls>
-            <source src={audioURL} type="audio/wav" />
-          </audio>
-        )} */}
-        {processing === true ? (
-          <div className="audio-recorder-container">
-            <ReactLoading type="bars" color="#a317a3" className="loader" />
-          </div>
-        ) : (
-          <div className="no-loader"></div>
         )}
         <div className="audio-recorder-container">
-          <AudioReactRecorder
-            state={isRecording}
-            onStop={onStop}
-            canvasHeight={"50%"}
-            backgroundColor={"white"}
-            foregroundColor={"#1C82AD"}
-          />
+          {audioURL && <ReactAudioPlayer src={audioURL} controls />}
+          {record && <ReactLoading className="test-loader" type="bars" color="#a317a3" />}
         </div>
-
-        {/* <ReactLoading type="bars" color="red"/> */}
+        {processing && <ReactLoading type="bars" color="#a317a3" className="loader" />}
       </div>
       <div className="chat-container">
-        <h1 style={{ color: "white", fontWeight: "lighter" }}>
-          InsightAI personal assistant
-        </h1>
+        <h1 style={{ color: "white", fontWeight: "lighter" }}>InsightAI personal assistant</h1>
         <div className="chat-box">
-          {received ? (
-            <div className={"audio-wrapper"}>
-              <img className="avatar" src={require("./avatar.png")} />
-              {loadChat ? (
-                <ReactLoading
-                  type="bubbles"
-                  color="#17a34a"
-                  className="loader"
-                />
-              ) : (
-                <div style={{ minHeight: "30px" }}></div>
-              )}
+          <div className={"audio-wrapper"}>
+            <img className="avatar" src={require("./avatar.png")} alt="Avatar" />
+            {loadChat && <ReactLoading type="bubbles" color="#17a34a" className="loader" />}
+            {audio && (
               <ReactAudioPlayer
-                src={`data:audio/wav;base64,${audio}`}
+                src={audio}
                 controls={true}
                 autoPlay={true}
+                onPlay={() => setIsLLMLoading(true)}
+                onEnded={() => setIsLLMLoading(false)}
+                onPause={() => setIsLLMLoading(false)}
               />
-              {talking ? (
-                <ReactLoading type="bars" color="#17a34a" className="loader" />
-              ) : (
-                <div
-                  style={{
-                    minHeight: "30px",
-                    color: "white",
-                    fontSize: "20px",
-                    marginTop: "10px",
-                    fontWeight: "20px",
-                  }}
-                >
-                  <text>
-                    Nice question, give me a minute to think this through!
-                  </text>
-                </div>
-              )}
-            </div>
-          ) : (
-            <h1 className="filler">Upload an image and question</h1>
-          )}
+            )}
+            {talking && isLLMLoading && <ReactLoading type="bars" color="#17a34a" className="loader" />}
+            {!talking && received && (
+              <div style={{
+                  minHeight: "30px",
+                  color: "white",
+                  fontSize: "20px",
+                  marginTop: "10px",
+                  fontWeight: "20px",
+                }}>
+                <text>Great question, give me a minute to think this through!</text>
+              </div>
+            )}
+          </div>
+          {!received && <h1 className="filler">Upload an image and question</h1>}
         </div>
       </div>
     </div>

@@ -1,10 +1,15 @@
-import requests
 import config
+import io
+import wave
 from google.cloud import speech_v1p1beta1 as speech
 from google.cloud import texttospeech
-import io
 from pydub import AudioSegment
 import json
+import time
+import mimetypes
+import requests
+import time
+import os
 
 APP_KEY = "3c9a7ad798ebeb8d5c6b74d30b902c38aa1c56cd1cc4d78f10cdc4ae4bbd88aa"
 APP_ID = "insightai_c0fe0f_bf33f1"
@@ -52,69 +57,104 @@ def identify_learning_style_and_hobby(transcript):
 
     return style_summary, experience_summary
 
+
+
+def get_audio_file_info(audio_file_path):
+    with wave.open(audio_file_path, 'rb') as wf:
+        print(f"Channels: {wf.getnchannels()}")
+        print(f"Sample width: {wf.getsampwidth()}")
+        print(f"Frame rate: {wf.getframerate()}")
+        print(f"Frame count: {wf.getnframes()}")
+
 def convert_audio_to_required_format(audio_file_path, target_format='wav'):
-    """
-    Convert audio file to the format required by Google Speech-to-Text.
-    The target format is LINEAR16 with a sample rate of 16000 Hz.
-    """
-    audio = AudioSegment.from_file(audio_file_path, format="auto")
-    audio = audio.set_frame_rate(16000)
-    audio = audio.set_channels(1)  # mono channel
-    temp_path = "temp_converted_audio.wav"
-    audio.export(temp_path, format=target_format, codec='pcm_s16le')  # LINEAR16
-    return temp_path
+    try:
+        file_extension = os.path.splitext(audio_file_path)[1].lower()[1:]
+        print(f"Original file extension: {file_extension}")
+        if file_extension == target_format:
+            return audio_file_path
+        elif file_extension in ['webm', 'ogg']:
+            audio = AudioSegment.from_file(audio_file_path, format=file_extension)
+        else:
+            audio = AudioSegment.from_wav(audio_file_path)
 
-def speech_to_text(audio_file_path):
-    """
-    Convert the provided audio file to text using Google's Speech-to-Text API.
-    """
-    
-    # Convert the audio to the required format
-    converted_audio_path = convert_audio_to_required_format(audio_file_path)
+        audio = audio.set_frame_rate(16000)
+        audio = audio.set_channels(1)
+        temp_path = "temp_converted_audio.wav"
+        audio.export(temp_path, format=target_format, codec='pcm_s16le')
+        print(f"Audio exported to {temp_path}")
+        return temp_path
+    except Exception as e:
+        print(f"Error converting audio: {e}")
+        raise
 
-    client = speech.SpeechClient()
+def upload_to_assemblyai(filename):
+    def read_file(filename, chunk_size=5242880):
+        with open(filename, "rb") as _file:
+            while True:
+                data = _file.read(chunk_size)
+                if not data:
+                    break
+                yield data
 
-    with io.open(converted_audio_path, "rb") as audio_file:
-        content = audio_file.read()
+    api_token = '7f69bde78c5b48be96c4a49dc7b00ca9'
+    headers = {"authorization": api_token}
 
-    audio = speech.RecognitionAudio(content=content)
-    config = speech.RecognitionConfig(
-        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-        sample_rate_hertz=16000,
-        language_code="en-US",
+    response = requests.post(
+        "https://api.assemblyai.com/v2/upload",
+        headers=headers,
+        data=read_file(filename)
     )
 
-    # Use long_running_recognize for longer audio files
-    operation = client.long_running_recognize(config=config, audio=audio)
-    response = operation.result(timeout=360)  # Adjust timeout as needed
+    print(f"Upload response: {response.json()}")
+    
+    if response.status_code == 200:
+        return response.json()["upload_url"]
+    else:
+        print(f"Failed to upload file, status code: {response.status_code}")
+        return None
+    
+    
+def speech_to_text(audio_file_path):
+    try:
+        api_token = '7f69bde78c5b48be96c4a49dc7b00ca9'
+        headers = {
+            'authorization': api_token,
+            'content-type': 'application/json',
+        }
 
-    transcribed_text = ""
-    for result in response.results:
-        transcribed_text += result.alternatives[0].transcript + " "
+        # Upload your local file to the AssemblyAI API
+        with open(audio_file_path, "rb") as f:
+            response = requests.post("https://api.assemblyai.com/v2/upload",
+                                     headers=headers,
+                                     data=f)
 
-    return transcribed_text.strip()
+        upload_url = response.json()["upload_url"]
+
+        return upload_url  # Return the upload_url instead of transcription_id
+
+    except Exception as e:
+        print(f"Error converting speech to text: {e}")
+        return None
+
 
 #for mathpix
 def extract_image_content(image_path):
     """
     Extract content from an image using the Mathpix API.
-    This function currently extracts formatted content in the form of LaTeX, 
-    but can be adjusted as per the API's capabilities.
     """
-
     r = requests.post("https://api.mathpix.com/v3/text",
-    files={"file": open(image_path,"rb")},
-    data={
-      "options_json": json.dumps({
-        "math_inline_delimiters": ["$", "$"],
-        "rm_spaces": True
-      })
-    },
-    headers={
-        "app_id": APP_ID,
-        "app_key": APP_KEY
-    }
-)
+        files={"file": open(image_path, "rb")},
+        data={
+            "options_json": json.dumps({
+                "math_inline_delimiters": ["$", "$"],
+                "rm_spaces": True
+            })
+        },
+        headers={
+            "app_id": APP_ID,
+            "app_key": APP_KEY
+        }
+    )
     return json.dumps(r.json(), indent=4, sort_keys=True)
 
 
@@ -124,11 +164,19 @@ def get_gpt_response(user_query, image_content, user_style, user_hobby):
         "Authorization": f"Bearer {config.OPENAI_API_KEY}",
     }
     
-    prompt = f"Given that the user said '{user_query}' and referred to the content '{image_content}', and they prefer explanations in a '{user_style}' learning style using analogies related to '{user_hobby}', explain the concept to them."
-
+    
     messages = [
-        {"role": "system", "content": "You are a helpful personal tutor that can understand the the image context that is either returned in latex or SMILES and use your understanding of that to answer the users query/confusion according to their learning style and analogies using their hobbies"},
-        {"role": "user", "content": prompt}
+        {"role": "system", "content": 
+            f"""You are a helpful and interesting personal tutor. 
+            You can understand the the image content shown on the users screen. The content of the image might be returned to you (after some cv processing) as a text, latex, Smiles, or in some other form that you can understand. 
+            Here is the image content: "{image_content}" .  
+            Before preoceeding to answer the users question make sure you FULLY understand everything currently being shown on the screen. 
+            You also know that they returned this as their preferred learning style: '{user_style}' 
+            And they returned this as thier hobby:'{user_hobby}'. 
+            Your task is to explain thier query in a way that answers them directly, but explains it in a way that is according to their learning style, and if seen to be necessary (be thoughtfully proactive), also uses very thoughful analogies that is relatable based on their hobby. 
+            Be concise and succint as appropriate to fit a 1 minute voice explanation that is interesting and helpful to the user. (we are going to be returning your text in a voice form). 
+          """},
+        {"role": "user", "content": user_query}
     ]
 
     response = requests.post(ENDPOINT, headers=headers, json={"model": "gpt-4", "messages": messages})
@@ -139,7 +187,6 @@ def get_gpt_response(user_query, image_content, user_style, user_hobby):
     else:
         print(f"Unexpected API response for messages: {messages}")
         return "I'm sorry, I couldn't generate a response at the moment."
-
 
 def text_to_voice(text):
     """

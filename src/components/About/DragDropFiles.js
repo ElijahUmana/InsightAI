@@ -1,5 +1,7 @@
 import { useState, useRef } from "react";
 import "./About.css";
+import axios from 'axios';
+
 
 const DragDropFiles = ({ handleFile }) => {
   const [files, setFiles] = useState(null);
@@ -13,36 +15,33 @@ const DragDropFiles = ({ handleFile }) => {
 
   const handleDrop = (event) => {
     event.preventDefault();
-    console.log(event.dataTransfer.files);
     const imageUrl = URL.createObjectURL(event.dataTransfer.files[0]);
-    console.log(imageUrl);
-    const path = imageUrl;
-    console.log(path);
-    setImgSrc(path);
+    setImgSrc(imageUrl);
     setFiles(event.dataTransfer.files);
     setIsUploaded(true);
-
-    // handleFile(event.dataTransfer.files, true);
   };
 
   const handleSelect = (event) => {
     event.preventDefault();
     const imageUrl = URL.createObjectURL(event.target.files[0]);
-    console.log(event.target.files);
-    console.log(imageUrl);
-    const path = imageUrl;
-    console.log(path);
-    setImgSrc(path);
+    setImgSrc(imageUrl);
     setFiles(event.target.files);
     setIsUploaded(true);
-    // handleFile(event.dataTransfer.files, true);
   };
 
-  // send files to the server // learn from my other video
-  const handleUpload = () => {
+  // Upload the image and process it immediately on the server side
+  const handleUpload = async () => {
     const formData = new FormData();
-    formData.append("Files", files);
-    handleFile(files, true);
+    formData.append("file", files[0]);
+    try {
+      const response = await axios.post("http://127.0.0.1:5000/upload-image", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      console.log(response.data.message);
+      handleFile(files, true);
+    } catch (error) {
+      console.error("Failed to upload image to Flask:", error);
+    }
   };
 
   const handleCancel = () => {
@@ -51,7 +50,7 @@ const DragDropFiles = ({ handleFile }) => {
     handleFile(null, false);
   };
 
-  if (files)
+  if (files) {
     return (
       <>
         <div className="dropzone">
@@ -65,9 +64,7 @@ const DragDropFiles = ({ handleFile }) => {
         <div className="actions">
           <button
             className="dropzone-button2"
-            onClick={() => {
-              handleCancel();
-            }}
+            onClick={handleCancel}
           >
             Cancel
           </button>
@@ -77,14 +74,14 @@ const DragDropFiles = ({ handleFile }) => {
         </div>
       </>
     );
+  }
 
   return (
     <>
       <div className="dropzone" onDragOver={handleDragOver} onDrop={handleDrop}>
-        <h1>Drag and Drop a .png or .jpeg</h1>
+        <h1>Drag and Drop or Upload a screenshot of what you are trying to learn :) </h1>
         <input
           type="file"
-          multiple
           onChange={handleSelect}
           hidden
           accept="image/png, image/jpeg"

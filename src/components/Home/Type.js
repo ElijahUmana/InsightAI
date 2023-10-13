@@ -8,9 +8,9 @@ function Type() {
       className="typewriter"
       options={{
         strings: [
-          "Chase your learning goals and curiosity",
-          "Interact with students from your institution",
-          "Use AI to obtain improved answers",
+          "Follow  your  curiosity",
+          "Interact with a personal tutor just like a normal convo",
+          "Gain explanations tailored just for you!",
         ],
         autoStart: true,
         loop: true,

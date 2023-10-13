@@ -1,3 +1,18 @@
+.loader {
+    margin: 0 auto;
+    min-height: 7.25vh;
+    z-index: 1000;  /* Ensure the loader is on top of other elements */
+    width: 100px;   /* Set a width */
+    height: 100px;  /* Set a height */
+}
+
+.test-loader {
+    display: inline-block;
+    margin: 10px auto; /* Adjust this as needed */
+    z-index: 2000;
+}
+
+
 .about-container {
     display: flex;
     flex-direction: row;
