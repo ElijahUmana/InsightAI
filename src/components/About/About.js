@@ -105,9 +105,14 @@ useEffect(() => {
 // This useEffect listens for the responseReceived state and cleans up
 useEffect(() => {
   if (responseReceived) {
-      clearTimeout(timeoutId); // Ensure that polling is stopped if a response is received
-      setPollingInProgress(false);
+    clearTimeout(timeoutId);
+    setPollingInProgress(false);
   }
+
+  return () => {
+    setResponseReceived(false);  // Reset the state after the response is received
+    setTranscriptionId(null);    // Reset the transcription ID as well
+  };
 }, [responseReceived]);
 
 const obtainLLMResponse = async () => {
@@ -132,7 +137,7 @@ const obtainLLMResponse = async () => {
         console.log('Response from /generate-response received.');
         setTranscriptionId(response.data.transcription_id);
         setLoadChat(false);
-        setPollingInProgress(false); // Reset polling in progress flag after obtaining response
+        // setPollingInProgress(false); // Reset polling in progress flag after obtaining response
     } catch (error) {
         console.error("Error in obtainLLMResponse:", error.response ? error.response.data : error.message);
         setProcessing(false);
