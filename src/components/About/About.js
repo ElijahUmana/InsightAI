@@ -143,6 +143,9 @@ const obtainLLMResponse = async () => {
         setProcessing(false);
         setLoadChat(false);
     }
+
+
+    setResponseReceived(false);  
 };
 
 
