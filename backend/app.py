@@ -174,6 +174,9 @@ def fetch_transcription_text(transcription_id):
     return None
 
 
+PROCESSED_TRANSCRIPTION_IDS = set()
+
+
 @api.route('/assemblyai-webhook', methods=['POST'])
 def assemblyai_webhook():
     print("Received webhook from AssemblyAI.")
@@ -187,8 +190,15 @@ def assemblyai_webhook():
         status = request_data['status']
         print(f"Transcription status for {transcription_id}: {status}")
 
+
+        if transcription_id in PROCESSED_TRANSCRIPTION_IDS:
+            print(f"Already processed transcription ID {transcription_id}")
+            return jsonify({"message": "Already processed"}), 200
+
         if status == 'completed':
             # Fetch the transcription text from AssemblyAI
+            PROCESSED_TRANSCRIPTION_IDS.add(transcription_id)
+            
             transcript_result = fetch_transcription_text(transcription_id)
             if transcript_result is None:
                 print(f"Error fetching transcription text for {transcription_id}")
@@ -230,6 +240,8 @@ def assemblyai_webhook():
     except Exception as e:
         print(f"Error processing webhook: {e}")
         return jsonify({"error": "Server error"}), 500
+
+
 
 
 @api.route('/get-response/<string:transcription_id>', methods=['GET'])
