@@ -12,6 +12,8 @@ import config
 import time
 import mimetypes
 import pydub
+from flask import send_from_directory
+from os import path
 
 
 APP_KEY = "3c9a7ad798ebeb8d5c6b74d30b902c38aa1c56cd1cc4d78f10cdc4ae4bbd88aa"
@@ -64,16 +66,22 @@ def onboarding():
                     "style": style_summary, 
                     "experience": experience_summary}), 200
     
-PROCESSED_IMAGES = {}
+    
 USER_STYLE = "receive detailed step by step explanations, understanding intuition behind concepts is essential."
 USER_HOBBY = "Listening to music and basketball"
 
+
+PROCESSED_IMAGES = {}
+
 @api.route('/upload-image', methods=["POST"])
 def upload_image():
+    print("Received image at this endpoint")
     try:
         image_file = request.files["file"]
         if image_file:
-            image_file.save("./curr.png")
+            filepath = "./curr.png"
+            image_file.save(filepath)
+            print(f"Image saved to {filepath}")
 
             # Process the image content using the Mathpix API
             image_content = extract_image_content("./curr.png")
@@ -87,8 +95,35 @@ def upload_image():
         print(f"Error uploading and processing image: {e}")
         return jsonify({"error": "Server error during image upload and processing"}), 500
 
+
+@api.route('/get-processed-image', methods=["GET"])
+def get_processed_image():
+    try:
+        image_url = "http://127.0.0.1:5000/curr.png"
+        print(f"Trying to retrieve image from {image_url}")
+        
+        # Return the URL of the processed image
+        return jsonify({"imageUrl": image_url}), 200
+    except Exception as e:
+        print(f"Error retrieving processed image: {e}")
+        return jsonify({"error": "Could not retrieve processed image"}), 500
+
+
+from flask import send_file
+
+@api.route('/curr.png', methods=["GET"])
+def serve_image():
+    try:
+        # Provide the path to the image
+        image_path = "./curr.png"
+        return send_file(image_path, mimetype='image/png')
+
+    except Exception as e:
+        print(f"Error serving image: {e}")
+        return jsonify({"error": "Could not serve the image"}), 500
+
+
 RESPONSES = {}  # Dictionary to store audio responses keyed by transcription_id
-AUDIO_RESPONSES_DIR = "audio_responses"
 
 def convert_mp3_to_wav(mp3_path):
     audio = pydub.AudioSegment.from_mp3(mp3_path)
@@ -128,7 +163,7 @@ def generate_response():
         upload_url = response.json()["upload_url"]
 
         # The webhook URL where AssemblyAI will send the transcription result
-        webhook_url = "https://feb0-98-15-195-180.ngrok-free.app/assemblyai-webhook"
+        webhook_url = "https://3bcc-98-15-195-180.ngrok-free.app/assemblyai-webhook"
 
         # Create a JSON payload containing the audio_url parameter and the webhook_url parameter
         data = {

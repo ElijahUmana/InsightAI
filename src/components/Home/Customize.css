@@ -1,42 +1,46 @@
-.started-button {
+/* Global Styles */
+body {
+    font-family: 'Arial', sans-serif;
+}
 
-    margin: 10% auto;
-    width: 40%;
-    padding: 0.5rem 1rem;
-    background-color: rgb(163, 23, 163);
-    color: white;
-    border-style: none;
-    border-radius: 0.5rem;
-    transition: 1s;
+/* Button Styles */
+.started-button {
+    margin: 2% auto;
+    width: 200px;
+    padding: 10px;
+    background-color: #a317a3;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s, transform 0.3s;
 }
 
 .started-button:hover {
-    cursor: pointer;
-    transition: 1s;
-    background-color: rgba(163, 23, 163, 0.9);
+    background-color: #8a148a;
 }
 
-.start-container {
-    display: flex;
-    flex-direction: column;
+.started-button:active {
+    transform: scale(0.95);
 }
 
-.home-section {
-    background-color: white;
+.multi-word-input {
+    background-color: #fff;
+    width: 50%;
+    max-width: 500px;
+    min-width: 300px;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: none;
+    color: #0c0707;
 }
 
+/* Description Text Styles */
 .description-container {
-    width: 100%;
-    text-align: left;
-    text-indent: 25px;
-    margin-left: 1rem
-}
-
-.description {
-    color: white;
-    margin: 1rem 0;
-    text-align: left;
-    text-indent: 10px; 
+    text-align: center; /* Centering text */
+    padding: 0 20px;
+    margin-top: 20px;
 }
 
 .multi-word-input-container {
@@ -48,18 +52,41 @@
     align-items: center;
   }
   
-.multi-word-input {
-    background-color: white;
-    width: 90%;
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    resize: none; /* Prevent textarea from being resized by the user */
-     overflow-y: auto; 
-    overflow-wrap: break-word;
+
+.description {
+    color: #fff; /* Brightening up the color */
+    font-size: 18px;
 }
 
+/* Section and Header Styles */
+.home-section {
+    background: url('../../Assets/home-main.svg') no-repeat center center/cover;
+    text-align: center; /* Centering content */
+    color: #fff; /* Setting a general color for readability */
+    padding: 50px; /* Adding padding top-bottom for aesthetic spacing */
+}
 
+.home-header h1 {
+    color: #fff;
+    padding-bottom: 10px;
+    margin: 0 auto; /* Centering horizontally and removing vertical default margin */
+    text-align: center; /* Ensuring text is centered */
+    line-height: 3; /* Improving readability with line height */
+    font-size: 2rem; /* Adjusting font size for readability */
+    
+}
 
+.heading {
+    font-weight: bold;
+}
 
+.main-name {
+    color: #a317a3;
+}
+
+/* Responsive Design */
+@media only screen and (max-width: 600px) {
+    .multi-word-input {
+        width: 90%;
+    }
+}

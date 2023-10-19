@@ -24,8 +24,8 @@ function Home() {
         {/* <Particle /> */}
         <Container className="home-content">
           <Row>
-            <Col md={7} className="home-header">
-              <h1 style={{ paddingBottom: 15 }} className="heading">
+            <Col md={{ span: 5, offset: 3 }} className="home-header">
+              <h1 style={{ paddingBottom: 15}} className="heading">
                 Hi There!{" "}
                 <span className="wave" role="img" aria-labelledby="wave">
                   👋🏻

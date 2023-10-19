@@ -21,10 +21,14 @@
 
 .chat-container {
     width: 40%;
+    height: 80vh;  /* Set a fixed height */
     display: flex;
     flex-direction: column;
     justify-content: center;
+    flex-shrink: 0;  /* Prevents the container from shrinking */
+    overflow-y: auto;  /* Adds a scrollbar if the content overflows */
 }
+
 
 .filler {
     margin: auto 0;
@@ -125,9 +129,12 @@
 }
 
 .uploaded-img {
-    max-height: 300px;
-    margin: auto auto;
+    width: 100%;  /* This will make the image take the full width of its container */
+    height: 100%;  /* This will make the image take the full height of its container */
+    object-fit: cover;  /* This will make the image cover the full area of its container */
+    margin: auto auto;  /* This centers the image in its container */
 }
+
 
 .record-title {
     color: white;
