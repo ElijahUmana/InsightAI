@@ -328,7 +328,7 @@ function About() {
                     })
                     .catch(error => console.error('Error stopping recording:', error));
                 recordingRef.current = null;
-            }, 200);
+            }, 500);
         } else {
             console.error('No recorder instance found');
         }
@@ -385,7 +385,7 @@ function About() {
                 </div>
             </div>
             <div className="chat-container">
-                <h1 style={{ color: "white", fontWeight: "lighter" }}>InsightAI personal assistant</h1>
+                <h1 style={{ color: "white", fontWeight: "lighter" }}>InsightAI Assistant</h1>
                 <div className="chat-box">
                     <div className={"audio-wrapper"}>
                         <img className="avatar" src={require("./avatar.png")} alt="Avatar" />

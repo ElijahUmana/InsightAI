@@ -99,13 +99,8 @@ const DragDropFiles = ({
                 </div>
                 {(files || processedImage) && (
                     <>
-                        <ul>
-                            {Array.from(files || []).map((file, idx) => (
-                                <li key={idx}>{file.name}</li>
-                            ))}
-                        </ul>
                         <div className="actions">
-                            <button className="dropzone-button2" onClick={handleCancel}>Clear Image</button>
+                            <button className="dropzone-button2" onClick={handleCancel}>Remove Image</button>
                         </div>
                     </>
                 )}

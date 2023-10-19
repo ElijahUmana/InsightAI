@@ -163,7 +163,7 @@ def generate_response():
         upload_url = response.json()["upload_url"]
 
         # The webhook URL where AssemblyAI will send the transcription result
-        webhook_url = "https://3bcc-98-15-195-180.ngrok-free.app/assemblyai-webhook"
+        webhook_url = "https://adf7-98-15-195-180.ngrok-free.app/assemblyai-webhook"
 
         # Create a JSON payload containing the audio_url parameter and the webhook_url parameter
         data = {
