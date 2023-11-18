@@ -71,7 +71,7 @@ const DragDropFiles = ({
       const formData = new FormData();
       formData.append("file", files[0]);
       try {
-          await axios.post("http://127.0.0.1:5000/upload-image", formData, {
+          await axios.post("http://127.0.0.1:8000/upload-image", formData, {
               headers: { "Content-Type": "multipart/form-data" },
           });
           handleFile(files, true);
@@ -111,7 +111,12 @@ const DragDropFiles = ({
     return (
         <>
             <div className="dropzone" onDragOver={handleDragOver} onDrop={handleDrop}>
-                <h1>Drag and Drop or Upload a screenshot of what you are trying to learn :) </h1>
+                <h4>Utilize InsightAI's Chrome extension for easy screenshots, or upload image directly from your computer</h4>
+                <br></br>
+                <br></br>
+                <h5>We currently *ONLY* support images containing math equations, chemical equations, computer code snippets, or plain text.</h5>
+                <br></br>
+                <br></br>
                 <input
                     type="file"
                     onChange={handleSelect}
@@ -120,7 +125,7 @@ const DragDropFiles = ({
                     ref={inputRef}
                 />
                 <button onClick={() => inputRef.current.click()} className="dropzone-button">
-                    Select Image
+                    Upload Image
                 </button>
             </div>
             <div className="actions"></div>

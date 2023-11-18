@@ -1,70 +1,66 @@
-import React, { useState, createContext, useContext } from "react";
-import { Container, Row, Col, Button } from "react-bootstrap";
-import homeLogo from "../../Assets/home-main.svg";
-import Particle from "../Particle";
-import Home2 from "./Home2";
-import Type from "./Type";
-import "./Customize.css";
-import { Link } from "react-router-dom";
-import Nav from "react-bootstrap/Nav";
-const handleClick = () => {
-  // alert("Button Clicked!");
-};
+import React, { useState } from 'react';
+import { Container, Row, Col } from 'react-bootstrap';
+import './Customize.css';
+import { useNavigate } from 'react-router-dom'; // useNavigate is imported
+
 function Customize() {
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [text, setText] = useState("");
+  const [text, setText] = useState('');
   const [proceed, setProceed] = useState(false);
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    setSelectedImage(URL.createObjectURL(file));
-  };
+  const navigate = useNavigate(); // useNavigate hook
 
   const handleTextChange = (event) => {
-    setText(event.target.value);
-    if (text.length > 20) {
-      setProceed(true);
-    } else setProceed(false);
+    const newText = event.target.value;
+    setText(newText);
+    setProceed(newText.length > 20);
   };
 
-  const StyleContext = createContext({"style":null, "hobbies":null})
-  
+  const handleSubmit = async () => {
+    if (proceed) {
+      // Navigate to the 'about' page immediately
+      navigate('/about', { state: { styleText: text } });
+
+      try {
+        const response = await fetch('http://localhost:8000/onboarding', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text }),
+        });
+
+        const data = await response.json();
+        console.log(data);
+      } catch (error) {
+        console.error('Error:', error);
+      }
+    }
+  };
+
   return (
     <section>
       <Container fluid className="home-section" id="home">
-        {/* <Particle /> */}
         <Container className="home-content">
           <Row>
             <Col md={{ span: 6, offset: 3 }} className="home-header">
               <h1 style={{ paddingBottom: 15 }} className="heading">
                 <strong className="main-name"> InsightAI </strong> offers a
-                customizable experience for every student via using Large
-                Language Models{" "}
-                <span className="wave" role="img" aria-labelledby="wave">
+                customizable experience for every student using Large
+                Language Models
+                <span className="wave" role="img" aria-label="wave">
                   👩‍💻
                 </span>
               </h1>
-
-              {/* <h1 className="heading-name">
-                Welcome to
-                <strong className="main-name"> InsightAI </strong>
-              </h1> */}
-
-              {/* <div style={{ padding: 50, textAlign: "left" }}>
-                <Type />
-              </div> */}
             </Col>
-            {/* <Col>
-            </Col> */}
-            <div className="start-container"></div>
           </Row>
         </Container>
       </Container>
       <div className="description-container">
-        <text className="description">
-          Please enter your prefered style of learning, our models will
-          specifically use your prompt as additional context to help you
-          succeed!
-        </text>
+        <p className="description">
+          Please before getting started briefly respond in one sentence your hobbies/professional experience and your preferred learning style.
+          
+          IntrinsicAI will use your response as additional context to create better associative chainings and help you
+          learn more intuitively!
+        </p>
       </div>
       <div className="multi-word-input-container">
         <textarea
@@ -73,50 +69,24 @@ function Customize() {
           value={text}
           onChange={handleTextChange}
         />
-        <text> Enter a minimum of 20 characters</text>
+        <p> Enter a minimum of 20 characters</p>
       </div>
 
       {proceed ? (
         <button
-          style={{ cursor: "pointer" }}
+          style={{ cursor: 'pointer' }}
           className="started-button"
-          as={Link}
-          
-          // onClick={() => updateExpanded(false)}
+          onClick={handleSubmit}
         >
-          <Nav.Item>
-            <Nav.Link as={Link} to={{
-            pathname: '/about',
-            state: { styleText: text},
-          }}>
-              <text style={{ color: "white" }}>Get Started</text>
-             
-            </Nav.Link>
-          </Nav.Item>
+          <p style={{ color: 'white' }}>Get Started</p>
         </button>
       ) : (
         <button
-          style={{ color: "white", backgroundColor: "gray", cursor: "none" }}
+          style={{ color: 'white', backgroundColor: 'gray', cursor: 'not-allowed' }}
           className="started-button"
-          as={Link}
-          to="/about"
-          // onClick={() => updateExpanded(false)}
+          disabled
         >
-          <Nav.Item
-            style={{ color: "white", backgrounColor: "red", cursor: "none" }}
-          >
-            <Nav.Link>
-              <text
-                style={{
-                  color: "white",
-                  backgrounColor: "red",
-                  cursor: "none",
-                }}
-              >
-                Get Started
-              </text>
-            </Nav.Link>
-          </Nav.Item>
+          <p>Get Started</p>
         </button>
       )}
     </section>

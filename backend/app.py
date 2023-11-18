@@ -1,52 +1,276 @@
-
-import requests
+import asyncio
+import websockets
 import json
-from utils import speech_to_text, convert_audio_to_required_format, get_audio_file_info
-from flask import Flask, request, send_file, jsonify, Response
-from utils import speech_to_text, convert_audio_to_required_format, get_audio_file_info
-from utils import identify_learning_style_and_hobby, speech_to_text, get_gpt_response, text_to_voice, extract_image_content
-from flask_cors import CORS
-import os
-import base64
+import openai
+from fastapi import FastAPI, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
+import httpx
+from pydantic import BaseModel
+import uvicorn
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi.responses import JSONResponse, FileResponse
+import json
+import requests
+from typing import Optional
 import config
-import time
-import mimetypes
-import pydub
-from flask import send_from_directory
-from os import path
 
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+
+# Configuration
+OPENAI_API_KEY = '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'
+ELEVENLABS_API_KEY = '589fdbe084808d33dd3edf3bcd4f230c'
+ASSEMBLYAI_TOKEN = "7f69bde78c5b48be96c4a49dc7b00ca9"
+VOICE_ID = "CYw3kZ02Hs0563khs1Fj"
+
+
+
+# OpenAI Configuration
+openai.api_key = OPENAI_API_KEY
+
+class Transcript(BaseModel):
+    transcript: str
+# Temporary storage for transc ript (not ideal for production)
+latest_transcript = ""
+
+@app.get("/token")
+async def get_token():
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            'https://api.assemblyai.com/v2/realtime/token',
+            json={'expires_in': 3600},
+            headers={'authorization': ASSEMBLYAI_TOKEN}
+        )
+    return response.json()
+
+@app.post("/finalTranscript")
+async def receive_final_transcript(transcript_data: Transcript):
+    global latest_transcript
+    latest_transcript = transcript_data.transcript
+    return {"status": "transcript_received"}
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    await chat_completion(latest_transcript, websocket)
+
+async def text_chunker(chunks):
+    """Split text into chunks, ensuring to not break sentences."""
+    splitters = (".", ",", "?", "!", ";", ":", "—", "-", "(", ")", "[", "]", "}", " ")
+    buffer = ""
+    async for text in chunks:
+        if buffer.endswith(splitters):
+            yield buffer + " "
+            buffer = text
+        elif text.startswith(splitters):
+            yield buffer + text[0] + " "
+            buffer = text[1:]
+        else:
+            buffer += text
+
+    if buffer:
+        yield buffer + " "
+
+async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
+    uri = f"wss://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream-input?model_id=eleven_monolingual_v1&output_format=pcm_24000"
+
+    async with websockets.connect(uri) as elevenlabs_ws:
+        await elevenlabs_ws.send(json.dumps({
+            "text": " ",
+            "voice_settings": {"stability": 0.4, "similarity_boost": True},
+            "xi_api_key": ELEVENLABS_API_KEY,
+        }))
+
+
+        async def listen():
+            while True:
+                try:
+                    message = await elevenlabs_ws.recv()
+                    data = json.loads(message)
+                    if data.get("audio"):
+                        await websocket.send_json({"audio": data["audio"]})
+                    elif data.get('isFinal'):
+                        break
+                except websockets.exceptions.ConnectionClosed:
+                    print("Connection closed")
+                    break
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                    break
+
+        listener_task = asyncio.ensure_future(listen())
+
+        try:
+            async for text in text_chunker(text_iterator):
+                await elevenlabs_ws.send(json.dumps({"text": text, "try_trigger_generation": True}))
+
+            await elevenlabs_ws.send(json.dumps({"text": ""}))
+
+            # Wait until all audio data is received before closing the connection
+            await listener_task
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            listener_task.cancel()
+
+async def chat_completion(query: str, websocket: WebSocket):
+    
+        # Assuming 'default_image' and 'default_user' are placeholders for actual data
+    image_content = PROCESSED_IMAGES.get('default_image', '')
+    
+    user_data = USERS.get('default_user', {})
+    user_style = user_data.get('style', 'default style if not found')
+    user_hobby = user_data.get('hobby', 'default hobby if not found')
+
+    response = await openai.ChatCompletion.acreate(
+        model='gpt-4', 
+            messages=[
+        {"role": "system", "content": 
+            f"""You are a helpful personal conversational tutor. Your name is Vortex. You are a personal tutor that makes learning intuitive.
+            The users query is being converted from their speech to text so just know that the query might be a bit different to what they said and you can thoughtfully infer the right thing. You don't have to tell the users this just say you are a conversational ai tutor that can both hear what they say, see whats on their screen and know how to be their best personal tutor. 
+            
+            You can understand the the image content shown on the users screen. The content of the image might be returned to you (after some cv processing) as a text, or latex. 
+            
+            Here is the image content: ( "{image_content}" .)  Make sure to only pay attention to the useful part of the image content. The cv processing might provide extraneous informarion about the image. 
+            
+            Before proceeding to answer the users question make sure you FULLY understand everything currently being shown on the screen.
+            
+            If its in latex form make sure you covert it internally so something generally readable. You shouldn't be responding to the user in latex format but in the normal languages the teacher would use like "raised to the power of" for ^ or stuffs like that. 
+            
+            You also know that they returned this as their preferred learning style: ('{user_style}') 
+            
+            So your task is to explain thier query in a way that answers them directly in relation to helping them understand whats on the screen according to their learning style.
+            
+            Additionally You also know that they returned this as thier hobby: ( '{user_hobby}'. )
+            
+            Do not go further to use analogies if the users query doesn't warrant this. Please be thoughtful and you don't need to always use analogies for a simple direct question that warrants a direct useful response. 
+            
+            IF and only IF requested by the user, you can explain it in a way that uses a thoughful analogy that is relatable based on ONE of their hobbies. 
+            
+            But remember your goal is to respond to the users query directly. These are just additional contexts you can use as per the users query. 
+            
+            Return a concise and succint as appropriate response to fit a 1 minute voice over. Remeber to make sure your transcript reads symbols in the normal way the student will understand. We will be directly converting your text to speech using google text to speech and play it to the user. 
+        
+          """},
+        {"role": "user", "content": query}
+    ],
+        temperature=0.4, 
+        stream=True
+    )
+
+    async def text_iterator():
+        async for chunk in response:
+            delta = chunk['choices'][0]["delta"]
+            if 'content' in delta:
+                yield delta["content"]
+            else:
+                break
+
+    await text_to_speech_input_streaming(VOICE_ID, text_iterator(), websocket)
+    
+
+
+
+#FLASK UTILS
 
 APP_KEY = "3c9a7ad798ebeb8d5c6b74d30b902c38aa1c56cd1cc4d78f10cdc4ae4bbd88aa"
 APP_ID = "insightai_c0fe0f_bf33f1"
 
+def identify_learning_style_and_hobby(transcript):
+    """
+    Identify the learning style and hobby from the given transcript.
+    Uses OpenAI API to analyze the transcript content.
+    """
+    ENDPOINT = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {config.OPENAI_API_KEY}",
+    }
 
-api = Flask(__name__)
-CORS(api)
+    def make_api_call(messages):
+        data = {
+            "model": "gpt-4",   # Specify the model, adjust if necessary
+            "messages": messages
+        }
+        response = requests.post(ENDPOINT, headers=headers, json=data)
+        response_data = response.json()
+        
+        # Log the full API response for debugging
+        print(response_data)
+
+        if 'choices' in response_data:
+            return response_data['choices'][0]['message']['content'].strip()
+        else:
+            print(f"Unexpected API response for messages: {messages}")
+            return "Error extracting data"
+    
+    # Extract hobbies or experiences
+    messages_experience = [
+        {"role": "system", "content": "You are a helpful assistant that is concise."},
+        {"role": "user", "content": f"This is the users response: '{transcript}'. From that identify any mentioned hobbies OR professional experience. Respond ONLY in one sentence the identified hobby/professional experience."}
+    ]
+    experience_summary = make_api_call(messages_experience)
+
+    # Extract preferred explanation style
+    messages_style = [
+        {"role": "system", "content": "You are a helpful assistant that is concise. "},
+        {"role": "user", "content": f"This is the users response: '{transcript}'. From that identify the individual's preferred learning style that was said. Respond ONLY in one sentence the identified said preferred learning style or any style that was said"}
+    ]
+    style_summary = make_api_call(messages_style)
+
+    return style_summary, experience_summary
 
 
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = config.GOOGLE_CREDENTIALS_PATH
+#for mathpix
+def extract_image_content(image_path):
+    """
+    Extract content from an image using the Mathpix API.
+    """
+    r = requests.post("https://api.mathpix.com/v3/text",
+        files={"file": open(image_path, "rb")},
+        data={
+            "options_json": json.dumps({
+                "math_inline_delimiters": ["$", "$"],
+                "rm_spaces": True
+            })
+        },
+        headers={
+            "app_id": APP_ID,
+            "app_key": APP_KEY
+        }
+    )
+    return json.dumps(r.json(), indent=4, sort_keys=True)
 
+
+##FLASK ROUTES
 # A dictionary to store user information, e.g., learning style and hobby
 USERS = {}
 
 
-@api.route('/onboarding', methods=['POST'])
-def onboarding():
+
+class OnboardingRequest(BaseModel):
+    text: Optional[str] = None
+
+@app.post('/onboarding')
+async def onboarding(request_data: OnboardingRequest):
     """
-    This route handles the onboarding process for a user. 
-    It expects an audio file where the user talks about their preferences.
-    The function saves the audio file, converts it to text, and then extracts 
-    the learning style and any hobby or personal experience mentioned by the user.
-    The results are stored in a USERS dictionary for future use.
-    After processing, all temporary files are deleted.
+    This route handles the onboarding process for a user.
+    It now expects a JSON payload with the user's text input.
     """
 
-    audio_file = request.files.get('audio_file')
-    audio_file.save("audio.wav")  # Save the audio file temporarily
+    # Validate and extract data from request
+    if request_data.text is None:
+        raise HTTPException(status_code=400, detail="Text not provided")
 
-    # Convert the audio file to text
-    transcript = speech_to_text("audio.wav")
+    transcript = request_data.text
 
     # Extract the user's learning style and any mentioned hobby/experience
     style_summary, experience_summary = identify_learning_style_and_hobby(transcript)
@@ -54,253 +278,48 @@ def onboarding():
     # Store the extracted data for the user
     USERS['default_user'] = {'style': style_summary, 'hobby': experience_summary}
 
-    # Cleanup: remove temporary files
-    os.remove("audio.wav")
-
-    # Check if the converted audio file exists before removing it
-    if os.path.exists("temp_converted_audio.wav"):
-        os.remove("temp_converted_audio.wav")
+    # Cleanup: remove temporary files (if any)
 
     # Return a success message along with the extracted data
-    return jsonify({"message": "Onboarding successful", 
-                    "style": style_summary, 
-                    "experience": experience_summary}), 200
-    
-    
-USER_STYLE = "receive detailed step by step explanations, understanding intuition behind concepts is essential."
-USER_HOBBY = "Listening to music and basketball"
+    return {"message": "Onboarding successful", "style": style_summary, "experience": experience_summary}
 
+    
 
 PROCESSED_IMAGES = {}
 
-@api.route('/upload-image', methods=["POST"])
-def upload_image():
-    print("Received image at this endpoint")
+@app.post('/upload-image')
+async def upload_image(file: UploadFile = File(...)):  # FastAPI way to handle file uploads
     try:
-        image_file = request.files["file"]
-        if image_file:
-            filepath = "./curr.png"
-            image_file.save(filepath)
-            print(f"Image saved to {filepath}")
+        filepath = "./curr.png"
+        with open(filepath, "wb") as buffer:
+            buffer.write(file.file.read())
+        print(f"Image saved to {filepath}")
 
-            # Process the image content using the Mathpix API
-            image_content = extract_image_content("./curr.png")
-            
-            # Save the processed content in the PROCESSED_IMAGES dictionary
-            PROCESSED_IMAGES['default_image'] = image_content
-            return jsonify({"message": "Image uploaded and processed successfully"}), 200
-        else:
-            return jsonify({"error": "No image file provided"}), 400
+        image_content = extract_image_content(filepath)
+        PROCESSED_IMAGES['default_image'] = image_content
+        print(image_content)
+        return JSONResponse(content={"message": "Image uploaded and processed successfully"}, status_code=200)
     except Exception as e:
-        print(f"Error uploading and processing image: {e}")
-        return jsonify({"error": "Server error during image upload and processing"}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@api.route('/get-processed-image', methods=["GET"])
-def get_processed_image():
+@app.get('/get-processed-image')
+async def get_processed_image():
     try:
-        image_url = "http://127.0.0.1:5000/curr.png"
-        print(f"Trying to retrieve image from {image_url}")
-        
-        # Return the URL of the processed image
-        return jsonify({"imageUrl": image_url}), 200
+        image_url = "http://127.0.0.1:8000/curr.png"
+        return JSONResponse(content={"imageUrl": image_url}, status_code=200)
     except Exception as e:
-        print(f"Error retrieving processed image: {e}")
-        return jsonify({"error": "Could not retrieve processed image"}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
-
-from flask import send_file
-
-@api.route('/curr.png', methods=["GET"])
-def serve_image():
+@app.get('/curr.png')
+async def serve_image():
     try:
-        # Provide the path to the image
-        image_path = "./curr.png"
-        return send_file(image_path, mimetype='image/png')
-
+        return FileResponse('./curr.png', media_type='image/png')
     except Exception as e:
-        print(f"Error serving image: {e}")
-        return jsonify({"error": "Could not serve the image"}), 500
-
-
-RESPONSES = {}  # Dictionary to store audio responses keyed by transcription_id
-
-def convert_mp3_to_wav(mp3_path):
-    audio = pydub.AudioSegment.from_mp3(mp3_path)
-    wav_path = mp3_path.replace('.mp3', '.wav')
-    audio.export(wav_path, format="wav")
-    return wav_path
-
-@api.route('/generate-response', methods=['POST'])
-def generate_response():
-    print("Received request at /generate-response.")
-    audio_query_path = None
-    try:
-        audio_query_file = request.files.get('audio_query')
-        if audio_query_file is None:
-            return jsonify({"error": "Missing audio_query file"}), 400
-
-        audio_query_path = "audio_query.wav"
-        audio_query_file.save(audio_query_path)
-
-        get_audio_file_info(audio_query_path)  # assuming this function is necessary for your use case
-
-        # Convert the audio to the required format before uploading
-        converted_audio_path = convert_audio_to_required_format(audio_query_path)
-
-        api_token = '7f69bde78c5b48be96c4a49dc7b00ca9'
-        headers = {
-            'authorization': api_token,
-            'content-type': 'application/json',
-        }
-
-        # Upload your local file to the AssemblyAI API
-        with open(converted_audio_path, "rb") as f:
-            response = requests.post("https://api.assemblyai.com/v2/upload",
-                                     headers=headers,
-                                     data=f)
-
-        upload_url = response.json()["upload_url"]
-
-        # The webhook URL where AssemblyAI will send the transcription result
-        webhook_url = "https://adf7-98-15-195-180.ngrok-free.app/assemblyai-webhook"
-
-        # Create a JSON payload containing the audio_url parameter and the webhook_url parameter
-        data = {
-            "audio_url": upload_url,
-            "webhook_url": webhook_url
-        }
-
-        # Make a POST request to the AssemblyAI API endpoint with the payload and headers
-        response = requests.post('https://api.assemblyai.com/v2/transcript', json=data, headers=headers)
-        transcription_id = response.json()['id']
-
-        return jsonify({
-            "message": "Transcription process started successfully",
-            "transcription_id": transcription_id,
-            "upload_url": upload_url  # Including the upload_url for your reference
-        }), 200
-
-    except Exception as e:
-        print(f"Error generating response: {e}")
-        return jsonify({"error": "Server error"}), 500
-    finally:
-        if audio_query_path and os.path.exists(audio_query_path):
-            os.remove(audio_query_path)
-
-
-def fetch_transcription_text(transcription_id):
-    headers = {
-        "authorization": "7f69bde78c5b48be96c4a49dc7b00ca9"
-    }
-    try:
-        transcription_result_response = requests.get(
-            f"https://api.assemblyai.com/v2/transcript/{transcription_id}",
-            headers=headers
-        )
-        transcription_result_response.raise_for_status()  # Check for HTTP errors
-        transcription_result = transcription_result_response.json()
-        return transcription_result.get('text')
-    except requests.exceptions.HTTPError as err:
-        print(f"HTTP error occurred: {err}")
-    except Exception as err:
-        print(f"An error occurred: {err}")
-
-    return None
-
-
-PROCESSED_TRANSCRIPTION_IDS = set()
-
-
-@api.route('/assemblyai-webhook', methods=['POST'])
-def assemblyai_webhook():
-    print("Received webhook from AssemblyAI.")
-    try:
-        request_data = request.get_json()
-        if 'transcript_id' not in request_data or 'status' not in request_data:
-            print("Invalid webhook data:", request_data)
-            return jsonify({"error": "Invalid webhook data"}), 400
-
-        transcription_id = request_data['transcript_id']
-        status = request_data['status']
-        print(f"Transcription status for {transcription_id}: {status}")
-
-
-        if transcription_id in PROCESSED_TRANSCRIPTION_IDS:
-            print(f"Already processed transcription ID {transcription_id}")
-            return jsonify({"message": "Already processed"}), 200
-
-        if status == 'completed':
-            # Fetch the transcription text from AssemblyAI
-            PROCESSED_TRANSCRIPTION_IDS.add(transcription_id)
-            
-            transcript_result = fetch_transcription_text(transcription_id)
-            if transcript_result is None:
-                print(f"Error fetching transcription text for {transcription_id}")
-                return jsonify({"error": "Error fetching transcription text"}), 500
-
-            print(f"Transcription result for {transcription_id}: {transcript_result}")
-
-            # Assuming 'default_image' and 'default_user' are placeholders for actual data
-            image_content = PROCESSED_IMAGES.get('default_image', '')
-            user_data = USERS.get('default_user', {})
-
-            gpt_response = get_gpt_response(
-                transcript_result, image_content,
-                USER_STYLE, USER_HOBBY
-            )
-
-            print(f"GPT-3 response for {transcription_id}: {gpt_response}")
-
-            voice_response_path_mp3 = text_to_voice(gpt_response)
-            print(f"MP3 response path: {voice_response_path_mp3}")  # Added logging
-
-            voice_response_path_wav = convert_mp3_to_wav(voice_response_path_mp3)
-            print(f"WAV response path: {voice_response_path_wav}")  # Added logging
-
-            if not os.path.exists(voice_response_path_wav):
-                print(f"Error: WAV file not found at {voice_response_path_wav}")
-                return jsonify({"error": "Server error"}), 500
-
-            # Store the response using transcription_id as the key
-            RESPONSES[transcription_id] = {"audio_path": voice_response_path_wav}
-
-            print(f"Updated RESPONSES dictionary: {RESPONSES}")
-
-            return jsonify({"message": "Response generated and saved successfully"}), 200
-        else:
-            print(f"Transcription not completed for {transcription_id}: {status}")
-            return jsonify({"message": "Transcription not completed"}), 202
-
-    except Exception as e:
-        print(f"Error processing webhook: {e}")
-        return jsonify({"error": "Server error"}), 500
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 
-
-@api.route('/get-response/<string:transcription_id>', methods=['GET'])
-def get_response(transcription_id):
-    print(f"Received request at /get-response for transcription_id: {transcription_id}")
-    print(f"Current state of RESPONSES dictionary: {RESPONSES}")
-    response_data = RESPONSES.get(transcription_id)
     
-    if response_data is None or response_data['audio_path'] is None:
-        return jsonify({"status": "not_ready"}), 202
-
-    audio_path = response_data['audio_path']
-    try:
-        with open(audio_path, 'rb') as file:
-            audio_data = file.read()
-
-        audio_base64 = base64.b64encode(audio_data).decode('utf-8')  # Encoding audio data to base64
-        return jsonify({"status": "ready", "audio": audio_base64}), 200  # Returning JSON with status and base64 audio data
-
-    except Exception as e:
-        print(f"Error reading audio data: {e}")
-        return jsonify({"error": "Server error"}), 500
-
-
-if __name__ == '__main__':
-    api.run(debug=True)
-
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)    
