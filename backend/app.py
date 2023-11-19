@@ -86,7 +86,7 @@ async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
     async with websockets.connect(uri) as elevenlabs_ws:
         await elevenlabs_ws.send(json.dumps({
             "text": " ",
-            "voice_settings": {"stability": 0.4, "similarity_boost": True},
+            "voice_settings": {"stability": 0.2, "similarity_boost": True},
             "xi_api_key": ELEVENLABS_API_KEY,
         }))
 
@@ -297,7 +297,6 @@ async def upload_image(file: UploadFile = File(...)):  # FastAPI way to handle f
 
         image_content = extract_image_content(filepath)
         PROCESSED_IMAGES['default_image'] = image_content
-        print(image_content)
         return JSONResponse(content={"message": "Image uploaded and processed successfully"}, status_code=200)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

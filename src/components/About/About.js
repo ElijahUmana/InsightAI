@@ -147,7 +147,7 @@ function About() {
                         .then(blob => {
                             const file = new File([blob], 'redirected-image.png', { type: 'image/png' });
                             setFiles([file]);  // Update the files state with the obtained file
-                            setIsUploaded(true);  // Set isUploaded to true here
+                            // setIsUploaded(true);  // Set isUploaded to true here
                         })
                         .catch(error => console.error('Failed to fetch image file:', error));
                 } else {
@@ -163,6 +163,8 @@ function About() {
             fetchProcessedImage();
         }
     }, [isRedirected, setFiles]);
+
+        
     
     
         useEffect(() => {
@@ -595,7 +597,7 @@ function About() {
                             <img className="avatar" src={require("./avatar.png")} alt="Avatar" />
                         </div>
                         <div className="media-container">
-                            {displayText && <h5 className="chat-text" style={{ color: "white", fontWeight: "lighter" }}>Hi there! Ask me whatever questions you may have :) </h5>}
+                            {displayText && <h5 className="chat-text" style={{ color: "white", fontWeight: "lighter" }}>Hi there! Ask me whatever questions you may have :)</h5>}
                             {displayVideo && (
                             <div key="videoKey" className={showVideo ? "video-cropper video-fade-in" : "video-cropper video-fade-out"}>
                                 <video 
