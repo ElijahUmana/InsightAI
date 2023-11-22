@@ -143,7 +143,10 @@ async def chat_completion(query: str, websocket: WebSocket):
             
             You can understand the the image content shown on the users screen. The content of the image might be returned to you (after some cv processing) as a text, or latex. 
             
-            Here is the image content: ( "{image_content}" .)  Make sure to only pay attention to the useful part of the image content. The cv processing might provide extraneous informarion about the image. 
+            The user might or might not upload an image. But however always make sure to respond to their query. thats your primary goal. 
+            
+            
+            In the case that the image content is not empty, here is the image content: ( "{image_content}" .)  Make sure to only pay attention to the useful part of the image content. The cv processing might provide extraneous informarion about the image. 
             
             Before proceeding to answer the users question make sure you FULLY understand everything currently being shown on the screen.
             
@@ -159,9 +162,7 @@ async def chat_completion(query: str, websocket: WebSocket):
             
             IF and only IF requested by the user, you can explain it in a way that uses a thoughful analogy that is relatable based on ONE of their hobbies. 
             
-            But remember your goal is to respond to the users query directly. These are just additional contexts you can use as per the users query. 
-            
-            Return a concise and succint as appropriate response to fit a 1 minute voice over. Remeber to make sure your transcript reads symbols in the normal way the student will understand. We will be directly converting your text to speech using google text to speech and play it to the user. 
+            But remember your goal is to respond to the users query directly. These are just additional contexts you can use as per the users query. Whether there is an image or not respond to the users query using the image content if referred to. 
         
           """},
         {"role": "user", "content": query}
