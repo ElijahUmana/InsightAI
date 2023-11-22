@@ -71,7 +71,7 @@ const DragDropFiles = ({
       const formData = new FormData();
       formData.append("file", files[0]);
       try {
-          await axios.post("http://127.0.0.1:8000/upload-image", formData, {
+          await axios.post("https://insightai-backend-c99c36a74d36.herokuapp.com/upload-image", formData, {
               headers: { "Content-Type": "multipart/form-data" },
           });
           handleFile(files, true);

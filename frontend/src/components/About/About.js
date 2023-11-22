@@ -70,6 +70,7 @@ function About() {
     let adaptiveBufferSize = 1;
     const [transcript, setTranscript] = useState(''); // New state for the real-time transcript
     const [displayRecordingStatus, setDisplayRecordingStatus] = useState(false); // New state
+    
 
     const [showVideo, setShowVideo] = useState(false);
     const [audioChunkCounter, setAudioChunkCounter] = useState(0);
@@ -80,6 +81,9 @@ function About() {
     const [displayText, setDisplayText] = useState(false);
     const [countdown, setCountdown] = useState(null);
     const [currentCount, setCurrentCount] = useState(null);
+    const backendUrl = 'https://insightai-backend-c99c36a74d36.herokuapp.com';
+
+    
 
 
     
@@ -138,7 +142,7 @@ function About() {
     useEffect(() => {
         const fetchProcessedImage = async () => {
             try {
-                const response = await axios.get('http://127.0.0.1:8000/get-processed-image');
+                const response = await axios.get('https://insightai-backend-c99c36a74d36.herokuapp.com/get-processed-image');
                 if (response.status === 200) {
                     const imageUrl = response.data.imageUrl;
                     setProcessedImage(imageUrl);
@@ -297,7 +301,7 @@ function About() {
     
 
     const startResponseSocket = () => {
-        const responseSocket = new WebSocket('ws://localhost:8000/ws');
+        const responseSocket = new WebSocket('ws:https://insightai-backend-c99c36a74d36.herokuapp.com/ws');
         responseSocket.onmessage = (message) => {
             const res = JSON.parse(message.data);
             if (res.audio) {
@@ -318,7 +322,7 @@ function About() {
 
     const finalizeTranscription = async () => {
         console.log("Transcript to be sent to backend:", transcriptsRef.current);
-        await fetch('http://localhost:8000/finalTranscript', {
+        await fetch('https://insightai-backend-c99c36a74d36.herokuapp.com/finalTranscript', {
             method: 'POST',
             body: JSON.stringify({ transcript: transcriptsRef.current }),
             headers: { 'Content-Type': 'application/json' }
@@ -369,7 +373,7 @@ function About() {
             setIsRecording(true);
             transcriptsRef.current = '';  
     
-            const response = await fetch('http://localhost:8000/token');
+            const response = await fetch('https://insightai-backend-c99c36a74d36.herokuapp.com/token');
             const data = await response.json();
             const { token } = data;
     

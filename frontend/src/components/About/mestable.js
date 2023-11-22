@@ -137,7 +137,7 @@ function About() {
     useEffect(() => {
         const fetchProcessedImage = async () => {
             try {
-                const response = await axios.get('http://127.0.0.1:8000/get-processed-image');
+                const response = await axios.get('https://insightai-backend-c99c36a74d36.herokuapp.com/get-processed-image');
                 if (response.status === 200) {
                     const imageUrl = response.data.imageUrl;
                     setProcessedImage(imageUrl);
@@ -330,7 +330,7 @@ useEffect(() => {
     };
 
     const startResponseSocket = () => {
-        const responseSocket = new WebSocket('ws://localhost:8000/ws');
+        const responseSocket = new WebSocket('https://insightai-backend-c99c36a74d36.herokuapp.com/ws');
         responseSocket.onmessage = (message) => {
             const res = JSON.parse(message.data);
             if (res.audio) {
@@ -351,7 +351,7 @@ useEffect(() => {
 
     const finalizeTranscription = async () => {
         console.log("Transcript to be sent to backend:", transcriptsRef.current);
-        await fetch('http://localhost:8000/finalTranscript', {
+        await fetch('https://insightai-backend-c99c36a74d36.herokuapp.com/finalTranscript', {
             method: 'POST',
             body: JSON.stringify({ transcript: transcriptsRef.current }),
             headers: { 'Content-Type': 'application/json' }
@@ -402,7 +402,7 @@ useEffect(() => {
             setIsRecording(true);
             transcriptsRef.current = '';  
     
-            const response = await fetch('http://localhost:8000/token');
+            const response = await fetch('https://insightai-backend-c99c36a74d36.herokuapp.com/token');
             const data = await response.json();
             const { token } = data;
     

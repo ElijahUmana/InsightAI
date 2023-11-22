@@ -20,7 +20,7 @@ function Customize() {
       navigate('/about', { state: { styleText: text } });
 
       try {
-        const response = await fetch('http://localhost:8000/onboarding', {
+        const response = await fetch('https://insightai-backend-c99c36a74d36.herokuapp.com/onboarding', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
