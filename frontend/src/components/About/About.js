@@ -301,7 +301,7 @@ function About() {
     
 
     const startResponseSocket = () => {
-        const responseSocket = new WebSocket('ws:https://insightai-backend-c99c36a74d36.herokuapp.com/ws');
+        const responseSocket = new WebSocket('wss://insightai-backend-c99c36a74d36.herokuapp.com/ws');
         responseSocket.onmessage = (message) => {
             const res = JSON.parse(message.data);
             if (res.audio) {
