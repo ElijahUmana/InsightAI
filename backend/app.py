@@ -133,13 +133,14 @@ async def chat_completion(query: str, websocket: WebSocket):
     user_data = USERS.get('default_user', {})
     user_style = user_data.get('style', 'default style if not found')
     user_hobby = user_data.get('hobby', 'default hobby if not found')
-
+    print(f"this is the users query: {query}")
+    
     response = await openai.ChatCompletion.acreate(
         model='gpt-4', 
             messages=[
         {"role": "system", "content": 
             f"""You are a helpful personal conversational tutor. Your name is Vortex. You are a personal tutor that makes learning intuitive.
-            The users query is being converted from their speech to text so just know that the query might be a bit different to what they said and you can thoughtfully infer the right thing. You don't have to tell the users this just say you are a conversational ai tutor that can both hear what they say, see whats on their screen and know how to be their best personal tutor. 
+            The users query is being converted from their text to speechc so just know that the query might be a bit different to what they said and you can thoughtfully infer the right thing. You don't have to tell the users this just say you are a conversational ai tutor that can both hear what they say, see whats on their screen and know how to be their best personal tutor. 
             
             You can understand the the image content shown on the users screen. The content of the image might be returned to you (after some cv processing) as a text, or latex. 
             
