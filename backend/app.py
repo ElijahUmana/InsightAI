@@ -13,9 +13,6 @@ import json
 import requests
 from typing import Optional
 import config
-import os
-from fastapi.staticfiles import StaticFiles
-
 
 app = FastAPI()
 
@@ -27,16 +24,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 # Configuration
-OPENAI_API_KEY = config.OPENAI_API_KEY
-ELEVENLABS_API_KEY = config.ELEVENLABS_API_KEY
-ASSEMBLYAI_TOKEN = config.ASSEMBLYAI_TOKEN
-
-
-
+OPENAI_API_KEY = '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'
+ELEVENLABS_API_KEY = '589fdbe084808d33dd3edf3bcd4f230c'
+ASSEMBLYAI_TOKEN = "7f69bde78c5b48be96c4a49dc7b00ca9"
 VOICE_ID = "CYw3kZ02Hs0563khs1Fj"
 
 
@@ -93,7 +86,7 @@ async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
     async with websockets.connect(uri) as elevenlabs_ws:
         await elevenlabs_ws.send(json.dumps({
             "text": " ",
-            "voice_settings": {"stability": 0.4, "similarity_boost": True},
+            "voice_settings": {"stability": 0.2, "similarity_boost": True},
             "xi_api_key": ELEVENLABS_API_KEY,
         }))
 
@@ -136,21 +129,17 @@ async def chat_completion(query: str, websocket: WebSocket):
     user_data = USERS.get('default_user', {})
     user_style = user_data.get('style', 'default style if not found')
     user_hobby = user_data.get('hobby', 'default hobby if not found')
-    print(f"this is the users query: {query}")
-    
+
     response = await openai.ChatCompletion.acreate(
         model='gpt-4', 
             messages=[
         {"role": "system", "content": 
             f"""You are a helpful personal conversational tutor. Your name is Vortex. You are a personal tutor that makes learning intuitive.
-            The users query is being converted from their text to speechc so just know that the query might be a bit different to what they said and you can thoughtfully infer the right thing. You don't have to tell the users this just say you are a conversational ai tutor that can both hear what they say, see whats on their screen and know how to be their best personal tutor. 
+            The users query is being converted from their speech to text so just know that the query might be a bit different to what they said and you can thoughtfully infer the right thing. You don't have to tell the users this just say you are a conversational ai tutor that can both hear what they say, see whats on their screen and know how to be their best personal tutor. 
             
             You can understand the the image content shown on the users screen. The content of the image might be returned to you (after some cv processing) as a text, or latex. 
             
-            The user might or might not upload an image. But however always make sure to respond to their query. thats your primary goal. 
-            
-            
-            In the case that the image content is not empty, here is the image content: ( "{image_content}" .)  Make sure to only pay attention to the useful part of the image content. The cv processing might provide extraneous informarion about the image. 
+            Here is the image content: ( "{image_content}" .)  Make sure to only pay attention to the useful part of the image content. The cv processing might provide extraneous informarion about the image. 
             
             Before proceeding to answer the users question make sure you FULLY understand everything currently being shown on the screen.
             
@@ -166,7 +155,9 @@ async def chat_completion(query: str, websocket: WebSocket):
             
             IF and only IF requested by the user, you can explain it in a way that uses a thoughful analogy that is relatable based on ONE of their hobbies. 
             
-            But remember your goal is to respond to the users query directly. These are just additional contexts you can use as per the users query. Whether there is an image or not respond to the users query using the image content if referred to. 
+            But remember your goal is to respond to the users query directly. These are just additional contexts you can use as per the users query. 
+            
+            Return a concise and succint as appropriate response to fit a 1 minute voice over. Remeber to make sure your transcript reads symbols in the normal way the student will understand. We will be directly converting your text to speech using google text to speech and play it to the user. 
         
           """},
         {"role": "user", "content": query}
@@ -286,8 +277,6 @@ async def onboarding(request_data: OnboardingRequest):
 
     # Store the extracted data for the user
     USERS['default_user'] = {'style': style_summary, 'hobby': experience_summary}
-    # await users_collection.insert_one({'style': style_summary, 'hobby': experience_summary})
-
 
     # Cleanup: remove temporary files (if any)
 
@@ -299,9 +288,9 @@ async def onboarding(request_data: OnboardingRequest):
 PROCESSED_IMAGES = {}
 
 @app.post('/upload-image')
-async def upload_image(file: UploadFile = File(...)):
+async def upload_image(file: UploadFile = File(...)):  # FastAPI way to handle file uploads
     try:
-        filepath = "./static/curr.png"  # Save to the static directory
+        filepath = "./curr.png"
         with open(filepath, "wb") as buffer:
             buffer.write(file.file.read())
         print(f"Image saved to {filepath}")
@@ -312,16 +301,35 @@ async def upload_image(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.get('/get-processed-image')
 async def get_processed_image():
     try:
-        # Change the image URL to point to the static file URL
-        image_url = "/static/curr.png"  # Use relative URL
+        image_url = "https://insightai-backend-c99c36a74d36.herokuapp.com/curr.png"
         return JSONResponse(content={"imageUrl": image_url}, status_code=200)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get('/curr.png')
+async def serve_image():
+    try:
+        return FileResponse('./curr.png', media_type='image/png')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
     
-    
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)    
+@app.get('/get-processed-image')
+async def get_processed_image():
+    try:
+        image_url = "https://insightai-backend-c99c36a74d36.herokuapp.com/curr.png"
+        return JSONResponse(content={"imageUrl": image_url}, status_code=200)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get('/curr.png')
 async def serve_image():
     try:
