@@ -28,7 +28,7 @@ app.add_middleware(
 
 # Configuration
 OPENAI_API_KEY = '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'
-ELEVENLABS_API_KEY = '589fdbe084808d33dd3edf3bcd4f230c'
+ELEVENLABS_API_KEY = '589fdbe084808d33dd3edf3bcd4f230c' 
 ASSEMBLYAI_TOKEN = "7f69bde78c5b48be96c4a49dc7b00ca9"
 VOICE_ID = "CYw3kZ02Hs0563khs1Fj"
 
@@ -80,46 +80,18 @@ async def text_chunker(chunks):
     if buffer:
         yield buffer + " "
 
-async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
-    uri = f"wss://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream-input?model_id=eleven_monolingual_v1&output_format=pcm_24000"
+async def text_to_speech_openai(voice_id, text_iterator, websocket):
+    client = openai.Audio()
 
-    async with websockets.connect(uri) as elevenlabs_ws:
-        await elevenlabs_ws.send(json.dumps({
-            "text": " ",
-            "voice_settings": {"stability": 0.2, "similarity_boost": True},
-            "xi_api_key": ELEVENLABS_API_KEY,
-        }))
-
-
-        async def listen():
-            while True:
-                try:
-                    message = await elevenlabs_ws.recv()
-                    data = json.loads(message)
-                    if data.get("audio"):
-                        await websocket.send_json({"audio": data["audio"]})
-                    elif data.get('isFinal'):
-                        break
-                except websockets.exceptions.ConnectionClosed:
-                    print("Connection closed")
-                    break
-                except Exception as e:
-                    print(f"An error occurred: {e}")
-                    break
-
-        listener_task = asyncio.ensure_future(listen())
-
-        try:
-            async for text in text_chunker(text_iterator):
-                await elevenlabs_ws.send(json.dumps({"text": text, "try_trigger_generation": True}))
-
-            await elevenlabs_ws.send(json.dumps({"text": ""}))
-
-            # Wait until all audio data is received before closing the connection
-            await listener_task
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            listener_task.cancel()
+    async for text in text_iterator:
+        # Using OpenAI's TTS API
+        response = client.speech.create(
+            model="tts-1",
+            voice=voice_id,
+            input=text
+        )
+        # Instead of saving to file, we send the audio data directly through the websocket
+        await websocket.send_bytes(response["audio"])
 
 async def chat_completion(query: str, websocket: WebSocket):
     
@@ -174,7 +146,8 @@ async def chat_completion(query: str, websocket: WebSocket):
             else:
                 break
 
-    await text_to_speech_input_streaming(VOICE_ID, text_iterator(), websocket)
+    await text_to_speech_openai("alloy", text_iterator(), websocket)
+
     
 
 
