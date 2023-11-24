@@ -35,10 +35,6 @@ ASSEMBLYAI_TOKEN = "7f69bde78c5b48be96c4a49dc7b00ca9"
 VOICE_ID = "CYw3kZ02Hs0563khs1Fj"
 
 
-
-
-# OpenAI Configuration
-OPENAI_API_KEY = 'your_openai_api_key'
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 class Transcript(BaseModel):
