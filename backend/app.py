@@ -14,6 +14,8 @@ import requests
 from typing import Optional
 import config
 import os
+from .db import get_database
+
 
 app = FastAPI()
 
@@ -271,6 +273,9 @@ async def onboarding(request_data: OnboardingRequest):
     This route handles the onboarding process for a user.
     It now expects a JSON payload with the user's text input.
     """
+    
+    db = get_database()
+    users_collection = db.users  # 'users' is the collection name
 
     # Validate and extract data from request
     if request_data.text is None:
@@ -282,7 +287,9 @@ async def onboarding(request_data: OnboardingRequest):
     style_summary, experience_summary = identify_learning_style_and_hobby(transcript)
 
     # Store the extracted data for the user
-    USERS['default_user'] = {'style': style_summary, 'hobby': experience_summary}
+    # USERS['default_user'] = {'style': style_summary, 'hobby': experience_summary}
+    await users_collection.insert_one({'style': style_summary, 'hobby': experience_summary})
+
 
     # Cleanup: remove temporary files (if any)
 
@@ -311,7 +318,7 @@ async def upload_image(file: UploadFile = File(...)):  # FastAPI way to handle f
 @app.get('/get-processed-image')
 async def get_processed_image():
     try:
-        image_url = "http://127.0.0.1:8000/curr.png"
+        image_url = "https://insightai-backend-c99c36a74d36.herokuapp.com/curr.png"
         return JSONResponse(content={"imageUrl": image_url}, status_code=200)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
