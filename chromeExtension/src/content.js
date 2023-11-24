@@ -60178,7 +60178,7 @@ async function sendImageToServer(imageBlob) {
 
   try {
       // Make the POST request
-      const response = await fetch('http://127.0.0.1:8000/upload-image', {
+      const response = await fetch('https://insightai-backend-c99c36a74d36.herokuapp.com/upload-image', {
           method: 'POST',
           body: formData
       });
@@ -60188,7 +60188,7 @@ async function sendImageToServer(imageBlob) {
           const result = await response.json();
           console.log(result.message);
           // Append a query parameter to indicate redirection from the companion extension
-          window.location.href = `http://localhost:3000/about?redirected=true`;
+          window.location.href = `https://insightai-frontend-64dce6bdd02b.herokuapp.com/about?redirected=true`;
       } else {
           console.error('Failed to upload image:', response.statusText);
       }
