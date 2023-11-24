@@ -14,6 +14,8 @@ import requests
 from typing import Optional
 import config
 
+from openai import AsyncOpenAI
+
 app = FastAPI()
 
 app.add_middleware(
@@ -34,8 +36,10 @@ VOICE_ID = "CYw3kZ02Hs0563khs1Fj"
 
 
 
+
 # OpenAI Configuration
-openai.api_key = OPENAI_API_KEY
+OPENAI_API_KEY = 'your_openai_api_key'
+client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 class Transcript(BaseModel):
     transcript: str
@@ -81,11 +85,9 @@ async def text_chunker(chunks):
         yield buffer + " "
 
 async def text_to_speech_openai(voice_id, text_iterator, websocket):
-    client = openai.Audio()
-
     async for text in text_iterator:
         # Using OpenAI's TTS API
-        response = client.speech.create(
+        response = client.audio.speech.create(
             model="tts-1",
             voice=voice_id,
             input=text
@@ -102,7 +104,7 @@ async def chat_completion(query: str, websocket: WebSocket):
     user_style = user_data.get('style', 'default style if not found')
     user_hobby = user_data.get('hobby', 'default hobby if not found')
 
-    response = await openai.ChatCompletion.acreate(
+    response = await client.chat.completions.create(
         model='gpt-4', 
             messages=[
         {"role": "system", "content": 
@@ -134,17 +136,18 @@ async def chat_completion(query: str, websocket: WebSocket):
           """},
         {"role": "user", "content": query}
     ],
-        temperature=0.4, 
+        temperature=0.5, 
         stream=True
     )
 
     async def text_iterator():
-        async for chunk in response:
-            delta = chunk['choices'][0]["delta"]
+        for chunk in response:
+            delta = chunk.choices[0].delta
             if 'content' in delta:
-                yield delta["content"]
+                yield delta.content
             else:
                 break
+
 
     await text_to_speech_openai("alloy", text_iterator(), websocket)
 
