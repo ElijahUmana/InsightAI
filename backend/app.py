@@ -28,7 +28,7 @@ app.add_middleware(
 
 # Configuration
 OPENAI_API_KEY = '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'
-ELEVENLABS_API_KEY = '589fdbe084808d33dd3edf3bcd4f230c'
+ELEVENLABS_API_KEY = 'bfa8174f4fdce0abd3a3c337c5b093e2'
 ASSEMBLYAI_TOKEN = "7f69bde78c5b48be96c4a49dc7b00ca9"
 VOICE_ID = "CYw3kZ02Hs0563khs1Fj"
 
