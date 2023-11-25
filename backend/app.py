@@ -131,6 +131,7 @@ async def chat_completion(query: str, websocket: WebSocket):
     user_data = USERS.get('default_user', {})
     user_style = user_data.get('style', 'default style if not found')
     user_hobby = user_data.get('hobby', 'default hobby if not found')
+    print(f"This was the users query: {query}")
 
     response = await openai.ChatCompletion.acreate(
         model='gpt-4', 
