@@ -14,8 +14,6 @@ import requests
 from typing import Optional
 import config
 
-from openai import AsyncOpenAI
-
 app = FastAPI()
 
 app.add_middleware(
@@ -29,16 +27,15 @@ app.add_middleware(
 
 
 # Configuration
-OPENAI_API_KEY = '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'
-ELEVENLABS_API_KEY = '589fdbe084808d33dd3edf3bcd4f230c' 
+OPENAI_API_KEY = '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'
+ELEVENLABS_API_KEY = '589fdbe084808d33dd3edf3bcd4f230c'
 ASSEMBLYAI_TOKEN = "7f69bde78c5b48be96c4a49dc7b00ca9"
 VOICE_ID = "CYw3kZ02Hs0563khs1Fj"
 
 
 
-
 # OpenAI Configuration
-client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+openai.api_key = OPENAI_API_KEY
 
 class Transcript(BaseModel):
     transcript: str
@@ -83,16 +80,46 @@ async def text_chunker(chunks):
     if buffer:
         yield buffer + " "
 
-async def text_to_speech_openai(voice_id, text_iterator, websocket):
-    async for text in text_iterator:
-        # Using OpenAI's TTS API
-        response = client.audio.speech.create(
-            model="tts-1",
-            voice=voice_id,
-            input=text
-        )
-        # Instead of saving to file, we send the audio data directly through the websocket
-        await websocket.send_bytes(response["audio"])
+async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
+    uri = f"wss://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream-input?model_id=eleven_monolingual_v1&output_format=pcm_24000"
+
+    async with websockets.connect(uri) as elevenlabs_ws:
+        await elevenlabs_ws.send(json.dumps({
+            "text": " ",
+            "voice_settings": {"stability": 0.2, "similarity_boost": True},
+            "xi_api_key": ELEVENLABS_API_KEY,
+        }))
+
+
+        async def listen():
+            while True:
+                try:
+                    message = await elevenlabs_ws.recv()
+                    data = json.loads(message)
+                    if data.get("audio"):
+                        await websocket.send_json({"audio": data["audio"]})
+                    elif data.get('isFinal'):
+                        break
+                except websockets.exceptions.ConnectionClosed:
+                    print("Connection closed")
+                    break
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                    break
+
+        listener_task = asyncio.ensure_future(listen())
+
+        try:
+            async for text in text_chunker(text_iterator):
+                await elevenlabs_ws.send(json.dumps({"text": text, "try_trigger_generation": True}))
+
+            await elevenlabs_ws.send(json.dumps({"text": ""}))
+
+            # Wait until all audio data is received before closing the connection
+            await listener_task
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            listener_task.cancel()
 
 async def chat_completion(query: str, websocket: WebSocket):
     
@@ -103,7 +130,7 @@ async def chat_completion(query: str, websocket: WebSocket):
     user_style = user_data.get('style', 'default style if not found')
     user_hobby = user_data.get('hobby', 'default hobby if not found')
 
-    response = await client.chat.completions.create(
+    response = await openai.ChatCompletion.acreate(
         model='gpt-4', 
             messages=[
         {"role": "system", "content": 
@@ -140,15 +167,14 @@ async def chat_completion(query: str, websocket: WebSocket):
     )
 
     async def text_iterator():
-        async for chunk in response: 
-            delta = chunk.choices[0].delta
+        async for chunk in response:
+            delta = chunk['choices'][0]["delta"]
             if 'content' in delta:
-                yield delta.content
+                yield delta["content"]
             else:
                 break
 
-    await text_to_speech_openai("alloy", text_iterator(), websocket)
-
+    await text_to_speech_input_streaming(VOICE_ID, text_iterator(), websocket)
     
 
 
@@ -276,26 +302,6 @@ async def upload_image(file: UploadFile = File(...)):  # FastAPI way to handle f
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get('/get-processed-image')
-async def get_processed_image():
-    try:
-        image_url = "https://insightai-backend-c99c36a74d36.herokuapp.com/curr.png"
-        return JSONResponse(content={"imageUrl": image_url}, status_code=200)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get('/curr.png')
-async def serve_image():
-    try:
-        return FileResponse('./curr.png', media_type='image/png')
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-
-    
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)    
 @app.get('/get-processed-image')
 async def get_processed_image():
     try:
