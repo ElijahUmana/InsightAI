@@ -35,6 +35,10 @@ ASSEMBLYAI_TOKEN = "7f69bde78c5b48be96c4a49dc7b00ca9"
 VOICE_ID = "CYw3kZ02Hs0563khs1Fj"
 
 
+
+
+# OpenAI Configuration
+OPENAI_API_KEY = 'your_openai_api_key'
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 class Transcript(BaseModel):
@@ -132,18 +136,17 @@ async def chat_completion(query: str, websocket: WebSocket):
           """},
         {"role": "user", "content": query}
     ],
-        temperature=0.5, 
+        temperature=0.4, 
         stream=True
     )
 
     async def text_iterator():
-        for chunk in response:
+        async for chunk in response: 
             delta = chunk.choices[0].delta
             if 'content' in delta:
                 yield delta.content
             else:
                 break
-
 
     await text_to_speech_openai("alloy", text_iterator(), websocket)
 
