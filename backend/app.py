@@ -27,7 +27,7 @@ app.add_middleware(
 
 
 # Configuration
-OPENAI_API_KEY = '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'
+OPENAI_API_KEY = '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'
 ELEVENLABS_API_KEY = 'bfa8174f4fdce0abd3a3c337c5b093e2'
 ASSEMBLYAI_TOKEN = "7f69bde78c5b48be96c4a49dc7b00ca9"
 VOICE_ID = "CYw3kZ02Hs0563khs1Fj"
@@ -157,7 +157,9 @@ async def chat_completion(query: str, websocket: WebSocket):
             
             But remember your goal is to respond to the users query directly. These are just additional contexts you can use as per the users query. 
             
-            Return a concise and succint as appropriate response to fit a 1 minute voice over. Remeber to make sure your transcript reads symbols in the normal way the student will understand. We will be directly converting your text to speech using google text to speech and play it to the user. 
+            Return a concise and succint as appropriate response to fit a 1 minute voice over. Remeber to make sure you write out your response that includes symbols in the normal way the student will understand when the tts reads it out loud. We will be directly converting your text to speech using google text to speech and play it to the user. so stuff like ">" you should write it as "greater than" and stuff like exponential you should write it as "raised to the power of" 
+            
+            Lastly MAKE SURE to ALWAYS limite your response to NO MORE than 200 words. 
         
           """},
         {"role": "user", "content": query}
