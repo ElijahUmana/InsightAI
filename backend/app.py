@@ -38,7 +38,6 @@ VOICE_ID = "CYw3kZ02Hs0563khs1Fj"
 
 
 # OpenAI Configuration
-OPENAI_API_KEY = 'your_openai_api_key'
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 class Transcript(BaseModel):
