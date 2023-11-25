@@ -81,9 +81,6 @@ function About() {
     const [displayText, setDisplayText] = useState(false);
     const [countdown, setCountdown] = useState(null);
     const [currentCount, setCurrentCount] = useState(null);
-    const backendUrl = 'https://insightai-backend-c99c36a74d36.herokuapp.com';
-
-    
 
 
     
@@ -240,33 +237,36 @@ function About() {
     
 
     const playAudioData = async (audioData) => {
+        console.log("Received audio data", audioData);
+    
         if (!audioContext) {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             audioContext = new AudioContext({ sampleRate: 24000 });
+            console.log("AudioContext created");
         }
+    
         if (audioContext.state === "suspended") {
             await audioContext.resume();
+            console.log("AudioContext resumed");
         }
-        const arrayBuffer = Uint8Array.from(atob(audioData), c => c.charCodeAt(0)).buffer;
-        const numberOfChannels = 1;
-        const length = arrayBuffer.byteLength / 2;
-        const sampleRate = 24000;
     
-        const audioBuffer = audioContext.createBuffer(numberOfChannels, length, sampleRate);
-        const channelData = audioBuffer.getChannelData(0);
+        try {
+            const audioBuffer = await audioContext.decodeAudioData(audioData);
+            audioBufferQueue.push(audioBuffer);
+            console.log("AudioBuffer decoded and pushed", audioBuffer);
     
-        const dataView = new DataView(arrayBuffer);
-        for (let i = 0; i < length; i++) {
-            channelData[i] = dataView.getInt16(i * 2, true) / 32768.0;
-        }
-        audioBufferQueue.push(audioBuffer);
+            setAudioChunkCounter(prev => prev + 1);
     
-        setAudioChunkCounter(prev => prev + 1);  // Increase the audio chunk counter for each received chunk
-    
-        if (!isPlaying && audioBufferQueue.length >= adaptiveBufferSize) {
-            playBufferedAudio();
+            if (!isPlaying && audioBufferQueue.length >= adaptiveBufferSize) {
+                playBufferedAudio();
+                console.log("Playing buffered audio");
+            }
+        } catch (error) {
+            console.error("Error in decoding or playing audio", error);
         }
     };
+    
+    
 
     const playBufferedAudio = () => {
         if (audioBufferQueue.length === 0) {
@@ -305,6 +305,7 @@ function About() {
         responseSocket.onmessage = (message) => {
             const res = JSON.parse(message.data);
             if (res.audio) {
+                console.log("WebSocket received audio data");
                 if (isPlaying) {
                     adaptiveBufferSize = Math.min(5, adaptiveBufferSize + 1);
                 }
