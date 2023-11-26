@@ -13,6 +13,9 @@ import json
 import requests
 from typing import Optional
 import config
+from datetime import datetime
+import os
+
 
 app = FastAPI()
 
@@ -40,8 +43,12 @@ openai.api_key = OPENAI_API_KEY
 
 class Transcript(BaseModel):
     transcript: str
-# Temporary storage for transc ript (not ideal for production)
-latest_transcript = ""
+# # Temporary storage for transc ript (not ideal for production)
+# latest_transcript = ""
+
+
+def generate_image_key():
+    return datetime.now().strftime("%Y%m%d%H%M%S%f")
 
 @app.get("/token")
 async def get_token():
@@ -290,39 +297,59 @@ async def onboarding(request_data: OnboardingRequest):
     
 
 PROCESSED_IMAGES = {}
+LATEST_IMAGE_KEY = None
 
 @app.post('/upload-image')
 async def upload_image(file: UploadFile = File(...)):  # FastAPI way to handle file uploads
+    global LATEST_IMAGE_KEY
     try:
+        # Save the uploaded image file
         filepath = "./curr.png"
         with open(filepath, "wb") as buffer:
             buffer.write(file.file.read())
         print(f"Image saved to {filepath}")
 
+        # Process the image to extract content
         image_content = extract_image_content(filepath)
-        PROCESSED_IMAGES['default_image'] = image_content
-        return JSONResponse(content={"message": "Image uploaded and processed successfully"}, status_code=200)
+
+        # Generate a unique key for this image content
+        LATEST_IMAGE_KEY = generate_image_key()
+        PROCESSED_IMAGES[LATEST_IMAGE_KEY] = image_content
+
+        # Delete the image file after processing
+        os.remove(filepath)
+        print(f"Image deleted from {filepath}")
+
+        return JSONResponse(content={"message": "Image uploaded and processed successfully", "key": LATEST_IMAGE_KEY}, status_code=200)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
 @app.get('/get-processed-image')
 async def get_processed_image():
+    global LATEST_IMAGE_KEY
     try:
-        image_url = "https://insightai-backend-c99c36a74d36.herokuapp.com/curr.png"
-        return JSONResponse(content={"imageUrl": image_url}, status_code=200)
+        # Check if there is a latest image content available
+        if LATEST_IMAGE_KEY is None or LATEST_IMAGE_KEY not in PROCESSED_IMAGES:
+            raise HTTPException(status_code=404, detail="No image content available")
+
+        # Retrieve the latest image content using the latest key
+        image_content = PROCESSED_IMAGES[LATEST_IMAGE_KEY]
+
+        return JSONResponse(content={"imageContent": image_content, "key": LATEST_IMAGE_KEY}, status_code=200)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get('/curr.png')
 async def serve_image():
     try:
+        # Serve the latest uploaded image file
         return FileResponse('./curr.png', media_type='image/png')
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-
     
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)    
+
