@@ -43,8 +43,8 @@ openai.api_key = OPENAI_API_KEY
 
 class Transcript(BaseModel):
     transcript: str
-# # Temporary storage for transc ript (not ideal for production)
-# latest_transcript = ""
+# Temporary storage for transc ript (not ideal for production)
+latest_transcript = ""
 
 
 def generate_image_key():
