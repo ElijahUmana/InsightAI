@@ -158,6 +158,7 @@ function About() {
     
         if (isRedirected) {
             console.log("isRedirected is true, fetching processed image...");
+            
             fetchProcessedImage();
         }
     }, [isRedirected, setFiles, setProcessedImage]);

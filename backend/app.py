@@ -49,10 +49,9 @@ async def clear_image_content():
     global latest_image_path
     try:
         # Delete the previous image file if it exists
-        if latest_image_path and os.path.exists(latest_image_path):
-            os.remove(latest_image_path)
-            latest_image_path = None
-            print("Previous image file deleted")
+        os.remove(latest_image_path)
+        latest_image_path = None
+        print("Previous image file deleted")
 
         # Clear the image content from Redis
         redis_client.delete('latest_image_content')
