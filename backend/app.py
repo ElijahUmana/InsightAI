@@ -44,8 +44,10 @@ ELEVENLABS_API_KEY = 'fb1d27b5fb4d1ceb38083a558f24f1cd'
 openai.api_key = OPENAI_API_KEY
 
 
-REDIS_URI = 'redis://default:F5uA9Rz7Pfxcw0xy5bRjWDmmIMzSEwzp@redis-18577.c56.east-us.azure.cloud.redislabs.com:18577'
-redis_client = redis.from_url(REDIS_URI, ssl=True)
+# Redis Configuration for Online Redis
+REDIS_URI = 'rediss://default:F5uA9Rz7Pfxcw0xy5bRjWDmmIMzSEwzp@redis-18577.c56.east-us.azure.cloud.redislabs.com:18577'
+redis_client = redis.from_url(REDIS_URI)
+
 
 class Transcript(BaseModel):
     transcript: str
