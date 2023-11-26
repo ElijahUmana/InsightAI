@@ -142,7 +142,7 @@ function About() {
     useEffect(() => {
         const fetchProcessedImage = async () => {
             try {
-                const response = await axios.get(`${backendUrl}/get-processed-image`, { responseType: 'blob' });
+                const response = await axios.get('https://insightai-backend-c99c36a74d36.herokuapp.com/get-processed-image');
                 console.log("Received response for processed image:", response);
                 if (response.status === 200) {
                     const file = new File([response.data], 'redirected-image.png', { type: 'image/png' });
