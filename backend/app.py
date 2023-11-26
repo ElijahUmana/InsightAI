@@ -176,7 +176,7 @@ async def chat_completion(query: str, websocket: WebSocket):
             
             Return a concise and succint as appropriate response to fit a 1 minute voice over. Remeber to make sure you write out your response that includes symbols in the normal way the student will understand when the tts reads it out loud. We will be directly converting your text to speech using google text to speech and play it to the user. so stuff like ">" you should write it as "greater than" and stuff like exponential you should write it as "raised to the power of" 
             
-            Lastly MAKE SURE to ALWAYS limite your response to NO MORE than 200 words. 
+            Lastly MAKE SURE to ALWAYS limite your response to NO MORE than *100 words* Very important!. 
         
           """},
         {"role": "user", "content": query}
@@ -309,6 +309,9 @@ latest_image_content = None  # Variable to hold the latest image content
 
 @app.post('/upload-image')
 async def upload_image(file: UploadFile = File(...)):
+    
+    global latest_image_content
+    
     try:
         # Generate a unique temporary file name
         temp_file_name = f"./temp_image_{uuid4()}.png"
