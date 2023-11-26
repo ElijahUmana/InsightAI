@@ -316,15 +316,9 @@ async def upload_image(file: UploadFile = File(...)):  # FastAPI way to handle f
         LATEST_IMAGE_KEY = generate_image_key()
         PROCESSED_IMAGES[LATEST_IMAGE_KEY] = image_content
 
-        # Delete the image file after processing
-        os.remove(filepath)
-        print(f"Image deleted from {filepath}")
-
         return JSONResponse(content={"message": "Image uploaded and processed successfully", "key": LATEST_IMAGE_KEY}, status_code=200)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
 
 @app.get('/get-processed-image')
 async def get_processed_image():
