@@ -314,23 +314,30 @@ processed_images = {}
 
 @app.post('/upload-image')
 async def upload_image(file: UploadFile = File(...)):
-    image_key = str(uuid4())
-
     try:
+        image_key = str(uuid4())
         temp_file_name = f"./temp_image_{image_key}.png"
+        
+        # Save the uploaded file
         with open(temp_file_name, "wb") as buffer:
             buffer.write(file.file.read())
+        print(f"Image saved to {temp_file_name}")
 
+        # Process the image and store in Redis
         image_content = extract_image_content(temp_file_name)
-
-        # Store the image content in Redis
         redis_client.set('latest_image_content', image_content)
+        print("Image content stored in Redis")
 
+        # Clean up the temporary file
         os.remove(temp_file_name)
+        print("Temporary image file deleted")
 
         return JSONResponse(content={"message": "Image uploaded and processed successfully"}, status_code=200)
+
     except Exception as e:
+        print(f"Error in /upload-image: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 
 @app.get('/get-processed-image')
