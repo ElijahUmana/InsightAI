@@ -145,9 +145,9 @@ function About() {
                 const response = await axios.get('https://insightai-backend-c99c36a74d36.herokuapp.com/get-processed-image');
                 console.log("Received response for processed image:", response);
                 if (response.status === 200) {
-                    const file = new File([response.data], 'redirected-image.png', { type: 'image/png' });
-                    console.log("Created file from blob:", file);
-                    setFiles([file]);
+                    const blobUrl = URL.createObjectURL(response.data);
+                    setProcessedImage(blobUrl);
+                    setFiles([new File([response.data], 'redirected-image.png', { type: 'image/png' })]);
                 } else {
                     console.error('Failed to fetch the processed image:', response.statusText);
                 }
