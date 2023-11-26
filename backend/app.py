@@ -15,6 +15,7 @@ from typing import Optional
 import config
 from datetime import datetime
 import os
+from uuid import uuid4
 
 
 app = FastAPI()
@@ -302,35 +303,32 @@ async def onboarding(request_data: OnboardingRequest):
 
     
 
-PROCESSED_IMAGES = {}
-LATEST_IMAGE_KEY = None
-
 latest_image_content = None  # Variable to hold the latest image content
 
-# ... [rest of your code]
+
 
 @app.post('/upload-image')
 async def upload_image(file: UploadFile = File(...)):
-    global latest_image_content
     try:
-        # Process the image to extract content
-        filepath = "./temp_image.png"  # Temporary file name
-        with open(filepath, "wb") as buffer:
-            buffer.write(file.file.read())
-        print(f"Image saved to {filepath}")
+        # Generate a unique temporary file name
+        temp_file_name = f"./temp_image_{uuid4()}.png"
 
-        image_content = extract_image_content(filepath)
+        with open(temp_file_name, "wb") as buffer:
+            buffer.write(file.file.read())
+        print(f"Image saved to {temp_file_name}")
+
+        image_content = extract_image_content(temp_file_name)
 
         # Update the latest image content
+        # Consider storing this in a more persistent storage if needed
         latest_image_content = image_content
 
         # Delete the temporary image file after processing
-        os.remove(filepath)
-        print(f"Temporary image deleted from {filepath}")
+        os.remove(temp_file_name)
+        print(f"Temporary image deleted from {temp_file_name}")
 
         return JSONResponse(content={"message": "Image uploaded and processed successfully"}, status_code=200)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get('/get-processed-image')
 async def get_processed_image():
@@ -341,16 +339,6 @@ async def get_processed_image():
             return JSONResponse(content={"imageContent": latest_image_content}, status_code=200)
         else:
             raise HTTPException(status_code=404, detail="No image content available")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-
-@app.get('/curr.png')
-async def serve_image():
-    try:
-        # Serve the latest uploaded image file
-        return FileResponse('./curr.png', media_type='image/png')
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
