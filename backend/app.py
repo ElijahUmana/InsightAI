@@ -39,6 +39,7 @@ VOICE_ID = "CYw3kZ02Hs0563khs1Fj"
 ELEVENLABS_API_KEY = 'fb1d27b5fb4d1ceb38083a558f24f1cd'
 
 
+latest_image_path = None 
 
 # OpenAI Configuration
 openai.api_key = OPENAI_API_KEY
@@ -318,6 +319,7 @@ processed_images = {}
 
 @app.post('/upload-image')
 async def upload_image(file: UploadFile = File(...)):
+    global latest_image_path
     try:
         image_key = str(uuid4())
         temp_file_name = f"./temp_image_{image_key}.png"
@@ -327,14 +329,13 @@ async def upload_image(file: UploadFile = File(...)):
             buffer.write(file.file.read())
         print(f"Image saved to {temp_file_name}")
 
-        # Process the image and store in Redis
+        # Process the image and store OCR content in Redis
         image_content = extract_image_content(temp_file_name)
         redis_client.set('latest_image_content', image_content)
-        print("Image content stored in Redis")
 
-        # Clean up the temporary file
-        os.remove(temp_file_name)
-        print("Temporary image file deleted")
+        # Store the image path instead of deleting it
+        latest_image_path = temp_file_name
+        print(f"Image stored at {latest_image_path}")
 
         return JSONResponse(content={"message": "Image uploaded and processed successfully"}, status_code=200)
 
@@ -346,13 +347,16 @@ async def upload_image(file: UploadFile = File(...)):
 
 @app.get('/get-processed-image')
 async def get_processed_image():
-    # Retrieve the latest image content from Redis
-    image_content = redis_client.get('latest_image_content')
-    if image_content:
-        return JSONResponse(content={"imageContent": image_content.decode('utf-8')}, status_code=200)
-    else:
-        raise HTTPException(status_code=404, detail="No image content available")
-
+    global latest_image_path
+    try:
+        # Check if the image file exists
+        if latest_image_path and os.path.exists(latest_image_path):
+            return FileResponse(latest_image_path, media_type='image/png')
+        else:
+            raise HTTPException(status_code=404, detail="No image content available")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
     
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)    
