@@ -44,6 +44,24 @@ latest_image_path = None
 # OpenAI Configuration
 openai.api_key = OPENAI_API_KEY
 
+@app.post('/clear-image-content')
+async def clear_image_content():
+    global latest_image_path
+    try:
+        # Delete the previous image file if it exists
+        if latest_image_path and os.path.exists(latest_image_path):
+            os.remove(latest_image_path)
+            latest_image_path = None
+            print("Previous image file deleted")
+
+        # Clear the image content from Redis
+        redis_client.delete('latest_image_content')
+        print("Cleared image content from Redis")
+
+        return {"status": "cleared"}
+    except Exception as e:
+        print(f"Error in /clear-image-content: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Redis Configuration for Online Redis
 REDIS_URI = 'redis://default:1qD008ljjrwxgto4d0wndxxPsVwcrhd6@redis-17813.c245.us-east-1-3.ec2.cloud.redislabs.com:17813'
@@ -321,6 +339,9 @@ processed_images = {}
 async def upload_image(file: UploadFile = File(...)):
     global latest_image_path
     try:
+        # Clear previous image and its content
+        await clear_image_content()
+
         image_key = str(uuid4())
         temp_file_name = f"./temp_image_{image_key}.png"
         
@@ -333,12 +354,11 @@ async def upload_image(file: UploadFile = File(...)):
         image_content = extract_image_content(temp_file_name)
         redis_client.set('latest_image_content', image_content)
 
-        # Store the image path instead of deleting it
+        # Update latest_image_path with the new image
         latest_image_path = temp_file_name
         print(f"Image stored at {latest_image_path}")
 
         return JSONResponse(content={"message": "Image uploaded and processed successfully"}, status_code=200)
-
     except Exception as e:
         print(f"Error in /upload-image: {e}")
         raise HTTPException(status_code=500, detail=str(e))

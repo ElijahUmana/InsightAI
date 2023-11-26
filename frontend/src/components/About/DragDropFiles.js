@@ -43,51 +43,73 @@ const DragDropFiles = ({
     };
 
     const handleDrop = async (event) => {
-      event.preventDefault();
-      const imageUrl = URL.createObjectURL(event.dataTransfer.files[0]);
-      setDisplayImage(imageUrl);
-      setFiles(event.dataTransfer.files);
-      setIsUploaded(true);
-      await handleUpload(event.dataTransfer.files);  // Automatically upload the file
-  };
-  
-  const handleSelect = async (event) => {
-      event.preventDefault();
-      const imageUrl = URL.createObjectURL(event.target.files[0]);
-      setDisplayImage(imageUrl);
-      setFiles(event.target.files);
-      setIsUploaded(true);
-      await handleUpload(event.target.files);  // Automatically upload the file
-  };
+        event.preventDefault();
+        if (files || isUploaded) {
+          handleCancel(); // Clear existing file before setting new
+        }
+        setDisplayImage(URL.createObjectURL(event.dataTransfer.files[0]));
+        setFiles(event.dataTransfer.files);
+        setIsUploaded(true);
+        await handleUpload(event.dataTransfer.files);
+      };
+    
+    const handleSelect = async (event) => {
+        event.preventDefault();
+        if (files || isUploaded) {
+          handleCancel(); // Clear existing file before setting new
+        }
+        setDisplayImage(URL.createObjectURL(event.target.files[0]));
+        setFiles(event.target.files);
+        setIsUploaded(true);
+        await handleUpload(event.target.files);
+      };
+    
   
   // ... rest of your code
   
   const handleUpload = async (files) => {
-      if (!files || files.length === 0) {
-          console.error('No files to upload.');
-          return;
-      }
-  
-      const formData = new FormData();
-      formData.append("file", files[0]);
-      try {
-          await axios.post("https://insightai-backend-c99c36a74d36.herokuapp.com/upload-image", formData, {
-              headers: { "Content-Type": "multipart/form-data" },
-          });
-          handleFile(files, true);
-      } catch (error) {
-          console.error("Failed to upload image to Flask:", error);
-      }
-  };
+    if (!files || files.length === 0) {
+        console.error('No files to upload.');
+        return;
+    }
+
+    // Clear previous image content in Redis before uploading the new image
+    try {
+        await axios.post("https://insightai-backend-c99c36a74d36.herokuapp.com/clear-image-content");
+        console.log("Cleared previous image content from Redis");
+    } catch (error) {
+        console.error("Failed to clear previous image content from Redis:", error);
+    }
+
+    const formData = new FormData();
+    formData.append("file", files[0]);
+    try {
+        await axios.post("https://insightai-backend-c99c36a74d36.herokuapp.com/upload-image", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        handleFile(files, true);
+        console.log("Uploaded new image and processed content");
+    } catch (error) {
+        console.error("Failed to upload image:", error);
+    }
+};
   
 
-    const handleCancel = () => {
+    const handleCancel = async () => {
+        // Clear the current image and extracted content
+        try {
+            await axios.post("https://insightai-backend-c99c36a74d36.herokuapp.com/clear-image-content");
+            console.log("Cleared current image content from Redis");
+        } catch (error) {
+            console.error("Failed to clear current image content from Redis:", error);
+        }
+
         setFiles(null);
-        setIsUploaded(false);  // Clear the displayed image
+        setIsUploaded(false); // Clear the displayed image
         handleFile(null, false);
-        clearProcessedImage();  // Clear processedImage in About
+        clearProcessedImage(); // Clear processedImage in parent component
         if (inputRef.current) {
-            inputRef.current.value = '';  // Reset the input element's value
+            inputRef.current.value = ''; // Reset the input element's value
         }
     };
 
