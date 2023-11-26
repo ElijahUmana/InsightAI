@@ -45,7 +45,7 @@ openai.api_key = OPENAI_API_KEY
 
 
 # Redis Configuration for Online Redis
-REDIS_URI = 'rediss://default:F5uA9Rz7Pfxcw0xy5bRjWDmmIMzSEwzp@redis-18577.c56.east-us.azure.cloud.redislabs.com:18577'
+REDIS_URI = 'redis://default:1qD008ljjrwxgto4d0wndxxPsVwcrhd6@redis-17813.c245.us-east-1-3.ec2.cloud.redislabs.com:17813'
 redis_client = redis.from_url(REDIS_URI)
 
 
