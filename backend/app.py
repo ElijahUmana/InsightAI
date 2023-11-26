@@ -132,12 +132,13 @@ async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
 async def chat_completion(query: str, websocket: WebSocket):
     
         # Assuming 'default_image' and 'default_user' are placeholders for actual data
-    global LATEST_IMAGE_KEY
+    global latest_image_content
     # Retrieve the latest image content
-    image_content = PROCESSED_IMAGES.get(LATEST_IMAGE_KEY, '') if LATEST_IMAGE_KEY else 'no image provided'
+    image_content = latest_image_content if latest_image_content else 'no image provided'
 
     # Print out the image content for debugging
     print(f"Image content being used: {image_content}")
+
 
     
     user_data = USERS.get('default_user', {})
@@ -304,49 +305,46 @@ async def onboarding(request_data: OnboardingRequest):
 PROCESSED_IMAGES = {}
 LATEST_IMAGE_KEY = None
 
-@app.post('/upload-image')
-async def upload_image(file: UploadFile = File(...)):  # FastAPI way to handle file uploads
-    global LATEST_IMAGE_KEY
-    try:
-        # Generate a unique key for the image being uploaded
-        LATEST_IMAGE_KEY = generate_image_key()
+latest_image_content = None  # Variable to hold the latest image content
 
-        # Save the uploaded image file with a unique name based on the key
-        filepath = f"./{LATEST_IMAGE_KEY}.png"
+# ... [rest of your code]
+
+@app.post('/upload-image')
+async def upload_image(file: UploadFile = File(...)):
+    global latest_image_content
+    try:
+        # Process the image to extract content
+        filepath = "./temp_image.png"  # Temporary file name
         with open(filepath, "wb") as buffer:
             buffer.write(file.file.read())
         print(f"Image saved to {filepath}")
 
-        # Process the image to extract content
         image_content = extract_image_content(filepath)
 
-        # Store the extracted content with the generated unique key
-        PROCESSED_IMAGES[LATEST_IMAGE_KEY] = image_content
+        # Update the latest image content
+        latest_image_content = image_content
 
-        # Delete the image file immediately after processing
+        # Delete the temporary image file after processing
         os.remove(filepath)
-        print(f"Image deleted from {filepath}")
+        print(f"Temporary image deleted from {filepath}")
 
-        # Return the key in the response so the front-end can use it to retrieve the content
-        return JSONResponse(content={"message": "Image uploaded and processed successfully", "key": LATEST_IMAGE_KEY}, status_code=200)
+        return JSONResponse(content={"message": "Image uploaded and processed successfully"}, status_code=200)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get('/get-processed-image')
 async def get_processed_image():
-    global LATEST_IMAGE_KEY
+    global latest_image_content
     try:
-        # Retrieve the content of the latest processed image
-        if LATEST_IMAGE_KEY in PROCESSED_IMAGES:
-            image_content = PROCESSED_IMAGES[LATEST_IMAGE_KEY]
-            # Optionally clean up if you don't need to store the content after it's been sent to the front-end
-            del PROCESSED_IMAGES[LATEST_IMAGE_KEY]
-            LATEST_IMAGE_KEY = None
-            return JSONResponse(content={"imageContent": image_content}, status_code=200)
+        # Check if there is any processed image content available
+        if latest_image_content:
+            return JSONResponse(content={"imageContent": latest_image_content}, status_code=200)
         else:
             raise HTTPException(status_code=404, detail="No image content available")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 @app.get('/curr.png')
 async def serve_image():
