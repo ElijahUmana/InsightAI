@@ -329,6 +329,8 @@ async def upload_image(file: UploadFile = File(...)):
 
         return JSONResponse(content={"message": "Image uploaded and processed successfully"}, status_code=200)
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get('/get-processed-image')
 async def get_processed_image():
