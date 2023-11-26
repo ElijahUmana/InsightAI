@@ -349,13 +349,13 @@ async def get_processed_image():
     global latest_image_path
     try:
         if latest_image_path and os.path.exists(latest_image_path):
-            print(f"Sending processed image: {latest_image_path}")
             return FileResponse(latest_image_path, media_type='image/png')
         else:
             raise HTTPException(status_code=404, detail="No image content available")
     except Exception as e:
         print(f"Error in get_processed_image: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
     
 if __name__ == "__main__":
