@@ -133,8 +133,12 @@ async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
 async def chat_completion(query: str, websocket: WebSocket):
     
         # Assuming 'default_image' and 'default_user' are placeholders for actual data
-    global latest_image_key, processed_images
-    image_content = processed_images.get(latest_image_key, 'no image provided')
+    temp_file_name = "./temp_latest_image.png"
+    if os.path.exists(temp_file_name):
+        with open(temp_file_name, "rb") as file:
+            image_content = file.read()
+    else:
+        image_content = 'no image provided'
 
     # Print out the image content for debugging
     print(f"Image content being used: {image_content}")
@@ -311,35 +315,31 @@ processed_images = {}
 
 @app.post('/upload-image')
 async def upload_image(file: UploadFile = File(...)):
-    global latest_image_key, processed_images
-    image_key = str(uuid4())
+    # Save the uploaded image content to a temporary file
+    temp_file_name = "./temp_latest_image.png"
+    with open(temp_file_name, "wb") as buffer:
+        buffer.write(file.file.read())
 
-    try:
-        temp_file_name = f"./temp_image_{image_key}.png"
-        with open(temp_file_name, "wb") as buffer:
-            buffer.write(file.file.read())
+    # Process the image
+    image_content = extract_image_content(temp_file_name)
 
-        image_content = extract_image_content(temp_file_name)
-        processed_images[image_key] = image_content
-        latest_image_key = image_key
+    # Optionally store the image content in the temporary file for later use
+    with open(temp_file_name, "wb") as file:
+        file.write(image_content)
 
-        os.remove(temp_file_name)
-        for key in list(processed_images):
-            if key != latest_image_key:
-                del processed_images[key]
-
-        return JSONResponse(content={"message": "Image uploaded and processed successfully", "key": image_key}, status_code=200)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return JSONResponse(content={"message": "Image uploaded and processed successfully"}, status_code=200)
 
 @app.get('/get-processed-image')
 async def get_processed_image():
-    global latest_image_key, processed_images
-    if latest_image_key:
-        image_content = processed_images.get(latest_image_key, 'no image provided')
+    # Retrieve the image content from the temporary file
+    temp_file_name = "./temp_latest_image.png"
+    if os.path.exists(temp_file_name):
+        with open(temp_file_name, "rb") as file:
+            image_content = file.read()
         return JSONResponse(content={"imageContent": image_content}, status_code=200)
     else:
         raise HTTPException(status_code=404, detail="No image content available")
+
 
     
 if __name__ == "__main__":
