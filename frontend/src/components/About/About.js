@@ -142,6 +142,7 @@ function About() {
     useEffect(() => {
         const fetchProcessedImage = async () => {
             try {
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 const response = await axios.get('https://insightai-backend-c99c36a74d36.herokuapp.com/get-processed-image');
                 console.log("Received response for processed image:", response);
                 if (response.status === 200) {
@@ -158,7 +159,7 @@ function About() {
     
         if (isRedirected) {
             console.log("isRedirected is true, fetching processed image...");
-            
+
             fetchProcessedImage();
         }
     }, [isRedirected, setFiles, setProcessedImage]);
