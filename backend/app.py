@@ -343,20 +343,20 @@ async def upload_image(file: UploadFile = File(...)):
         print(f"Error in /upload-image: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-
+    
 @app.get('/get-processed-image')
 async def get_processed_image():
     global latest_image_path
     try:
-        # Check if the image file exists
         if latest_image_path and os.path.exists(latest_image_path):
+            print(f"Sending processed image: {latest_image_path}")
             return FileResponse(latest_image_path, media_type='image/png')
         else:
             raise HTTPException(status_code=404, detail="No image content available")
     except Exception as e:
+        print(f"Error in get_processed_image: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-    
+
     
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)    
