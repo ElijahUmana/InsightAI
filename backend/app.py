@@ -67,13 +67,15 @@ async def get_token():
 
 @app.post("/finalTranscript")
 async def receive_final_transcript(transcript_data: Transcript):
-    global latest_transcript
-    latest_transcript = transcript_data.transcript
+    redis_client.set('latest_transcript', transcript_data.transcript)
     return {"status": "transcript_received"}
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    latest_transcript = redis_client.get('latest_transcript')
+    latest_transcript = latest_transcript.decode('utf-8') if latest_transcript else 'no query'
     await chat_completion(latest_transcript, websocket)
 
 async def text_chunker(chunks):
