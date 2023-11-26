@@ -260,7 +260,6 @@ def extract_image_content(image_path):
     )
     return json.dumps(r.json(), indent=4, sort_keys=True)
 
-
 ##FLASK ROUTES
 # A dictionary to store user information, e.g., learning style and hobby
 USERS = {}
@@ -303,8 +302,11 @@ LATEST_IMAGE_KEY = None
 async def upload_image(file: UploadFile = File(...)):  # FastAPI way to handle file uploads
     global LATEST_IMAGE_KEY
     try:
-        # Save the uploaded image file
-        filepath = "./curr.png"
+        # Generate a unique key for the image being uploaded
+        LATEST_IMAGE_KEY = generate_image_key()
+
+        # Save the uploaded image file with a unique name based on the key
+        filepath = f"./{LATEST_IMAGE_KEY}.png"
         with open(filepath, "wb") as buffer:
             buffer.write(file.file.read())
         print(f"Image saved to {filepath}")
@@ -312,10 +314,14 @@ async def upload_image(file: UploadFile = File(...)):  # FastAPI way to handle f
         # Process the image to extract content
         image_content = extract_image_content(filepath)
 
-        # Generate a unique key for this image content
-        LATEST_IMAGE_KEY = generate_image_key()
+        # Store the extracted content with the generated unique key
         PROCESSED_IMAGES[LATEST_IMAGE_KEY] = image_content
 
+        # Delete the image file immediately after processing
+        os.remove(filepath)
+        print(f"Image deleted from {filepath}")
+
+        # Return the key in the response so the front-end can use it to retrieve the content
         return JSONResponse(content={"message": "Image uploaded and processed successfully", "key": LATEST_IMAGE_KEY}, status_code=200)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -324,14 +330,15 @@ async def upload_image(file: UploadFile = File(...)):  # FastAPI way to handle f
 async def get_processed_image():
     global LATEST_IMAGE_KEY
     try:
-        # Check if there is a latest image content available
-        if LATEST_IMAGE_KEY is None or LATEST_IMAGE_KEY not in PROCESSED_IMAGES:
+        # Retrieve the content of the latest processed image
+        if LATEST_IMAGE_KEY in PROCESSED_IMAGES:
+            image_content = PROCESSED_IMAGES[LATEST_IMAGE_KEY]
+            # Optionally clean up if you don't need to store the content after it's been sent to the front-end
+            del PROCESSED_IMAGES[LATEST_IMAGE_KEY]
+            LATEST_IMAGE_KEY = None
+            return JSONResponse(content={"imageContent": image_content}, status_code=200)
+        else:
             raise HTTPException(status_code=404, detail="No image content available")
-
-        # Retrieve the latest image content using the latest key
-        image_content = PROCESSED_IMAGES[LATEST_IMAGE_KEY]
-
-        return JSONResponse(content={"imageContent": image_content, "key": LATEST_IMAGE_KEY}, status_code=200)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
