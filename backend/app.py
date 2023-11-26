@@ -132,7 +132,13 @@ async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
 async def chat_completion(query: str, websocket: WebSocket):
     
         # Assuming 'default_image' and 'default_user' are placeholders for actual data
-    image_content = PROCESSED_IMAGES.get('default_image', '')
+    global LATEST_IMAGE_KEY
+    # Retrieve the latest image content
+    image_content = PROCESSED_IMAGES.get(LATEST_IMAGE_KEY, '') if LATEST_IMAGE_KEY else 'no image provided'
+
+    # Print out the image content for debugging
+    print(f"Image content being used: {image_content}")
+
     
     user_data = USERS.get('default_user', {})
     user_style = user_data.get('style', 'default style if not found')
