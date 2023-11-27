@@ -139,21 +139,15 @@ function About() {
         setIsRedirected(checkRedirected());
     }, []);
 
+
     useEffect(() => {
-        if (isRedirected) {
-            if (firstLoadRef.current) {
-                // First load and redirected
-                firstLoadRef.current = false;
-                getImageFromUrlParam(); // Handle redirected image
-            } else {
-                // Subsequent load and redirected
-                // Insert the logic for this specific scenario here
-                dragDropRef.current && dragDropRef.current.handleCancel();
-            }
+        if (isRedirected && firstLoadRef.current) {
+            // First load and it's redirected
+            firstLoadRef.current = false;
+            getImageFromUrlParam(); // Handle redirected image
         } else {
-            // Not redirected
+            // All other scenarios: subsequent load after redirect, or any load (first or subsequent) without redirect
             if (!firstLoadRef.current) {
-                // This is a reload and not the first load
                 dragDropRef.current && dragDropRef.current.handleCancel(); // Call handleCancel
             }
             firstLoadRef.current = false;
