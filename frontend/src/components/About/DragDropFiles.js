@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useLocation } from "react-router-dom";  // Import useLocation
+import { useNavigate, useLocation } from 'react-router-dom';
 import "./About.css";
 import axios from 'axios';
 const DragDropFiles = ({ 
@@ -14,6 +14,7 @@ const DragDropFiles = ({
   const [displayImage, setDisplayImage] = useState(processedImage);
   const inputRef = useRef();
   const location = useLocation();
+  const navigate = useNavigate();
 
     useEffect(() => {
       const params = new URLSearchParams(location.search);

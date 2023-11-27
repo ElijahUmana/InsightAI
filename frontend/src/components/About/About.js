@@ -5,8 +5,7 @@ import "./About.css";
 import axios from "axios";
 import ReactAudioPlayer from "react-audio-player";
 import Recorder from 'recorder-js';
-import { useLocation } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import RecordRTC, { StereoAudioRecorder } from 'recordrtc';
 
 
@@ -57,6 +56,7 @@ function About() {
     const [processedImage, setProcessedImage] = useState('');
     const [isRedirected, setIsRedirected] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
     const [files, setFiles] = useState(null);
     const [isRecording, setIsRecording] = useState(false);
     const [isStopping, setIsStopping] = useState(false);
@@ -82,6 +82,7 @@ function About() {
     const [countdown, setCountdown] = useState(null);
     const [currentCount, setCurrentCount] = useState(null);
     const backendUrl = 'https://insightai-backend-c99c36a74d36.herokuapp.com';
+
 
     
 
@@ -128,11 +129,11 @@ function About() {
 
 
 
-    const checkRedirected = () => {
-        const params = new URLSearchParams(location.search);
-        return params.has('redirected');  // Check for 'redirected' URL parameter
-    };
-
+    const checkRedirected = useCallback(() => {
+        const params = new URLSearchParams(location.search); // use location here
+        return params.has('redirected');
+    }, [location]); // Add location to the dependency array
+    
     useEffect(() => {
         setIsRedirected(checkRedirected());
     }, []);
@@ -180,7 +181,7 @@ function About() {
             }
         };
     
-        if (isRedirected) {
+         if (isRedirected) {
             fetchProcessedImage().then(() => {
                 // This is where you reset the redirection after handling the image
                 const params = new URLSearchParams(window.location.search);
@@ -189,7 +190,7 @@ function About() {
                 setIsRedirected(null); // Set isRedirected to null
             });
         }
-    }, [isRedirected,navigate, setFiles]);
+    }, [isRedirected, setFiles]);
 
     useEffect(() => {
         if (isRedirected) {
@@ -203,7 +204,7 @@ function About() {
     }, [files]);
     
   
-    const location = useLocation();
+
 
     const getImageFromUrlParam = () => {
         const params = new URLSearchParams(location.search);
