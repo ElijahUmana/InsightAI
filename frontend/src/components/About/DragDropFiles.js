@@ -113,6 +113,13 @@ const DragDropFiles = ({
         if (inputRef.current) {
             inputRef.current.value = ''; // Reset the input element's value
         }
+
+        const params = new URLSearchParams(location.search);
+        params.delete('redirected');
+        navigate({
+            pathname: location.pathname,
+            search: params.toString()
+        });
     };
 
     if (files || isUploaded || processedImage) {
