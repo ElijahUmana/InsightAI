@@ -99,6 +99,7 @@ const DragDropFiles = forwardRef((props, ref) => {
 
     const handleCancel = async () => {
         // Clear the current image and extracted content
+        console.log("handCancel just called");
         try {
             await axios.post("https://insightai-backend-c99c36a74d36.herokuapp.com/clear-image-content");
             console.log("Cleared current image content from Redis");
