@@ -141,22 +141,24 @@ function About() {
 
 
 
+    // useEffect for handling redirects
     useEffect(() => {
-        // Check if it's the first load
-        if (firstLoadRef.current) {
-            firstLoadRef.current = false; // Mark as not the first load anymore
-    
-            if (isRedirected) {
-                // First load and it's redirected
-                getImageFromUrlParam(); // Handle redirected image
-            }
-            // If it's the first load and not redirected, do nothing special here
-        } else {
-            // This covers all subsequent loads (redirected or not)
-            dragDropRef.current && dragDropRef.current.handleCancel(); // Call handleCancel
+        if (isRedirected) {
+            getImageFromUrlParam(); // Handle redirected image
         }
     }, [isRedirected]);
-    
+
+    // useEffect for handling the first load
+    useEffect(() => {
+        if (firstLoadRef.current) {
+            // It's the first load
+            firstLoadRef.current = false;
+        } else {
+            // It's not the first load
+            dragDropRef.current && dragDropRef.current.handleCancel(); // Call handleCancel
+        }
+    }, []);
+
 
     useEffect(() => {
         const fetchProcessedImage = async () => {
