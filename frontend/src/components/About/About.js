@@ -151,10 +151,6 @@ function About() {
         }
     }, [isRedirected]);
 
-    useEffect(() => {
-        // Set the ref to false after the first render
-        isFirstLoad.current = false;
-    }, []);
 
     useEffect(() => {
         const fetchProcessedImage = async () => {
