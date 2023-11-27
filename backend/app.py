@@ -151,7 +151,6 @@ async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
 
         try:
             async for text in text_chunker(text_iterator):
-                print(f"this is the text from eleven labs: {text}")
                 await elevenlabs_ws.send(json.dumps({"text": text, "try_trigger_generation": True}))
 
             await elevenlabs_ws.send(json.dumps({"text": ""}))
@@ -161,79 +160,42 @@ async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
         except Exception as e:
             print(f"An error occurred: {e}")
             listener_task.cancel()
-
-# async def chat_completion(query: str, websocket: WebSocket):
     
-#         # Assuming 'default_image' and 'default_user' are placeholders for actual data
-#     image_content = redis_client.get('latest_image_content')
-#     image_content = image_content.decode('utf-8') if image_content else 'no image provided'
-
-
-#     # Print out the image content for debugging
-#     print(f"Image content being used: {image_content}")
-
-
-    
-#     user_data = USERS.get('default_user', {})
-#     user_style = user_data.get('style', 'default style if not found')
-#     user_hobby = user_data.get('hobby', 'default hobby if not found')
-#     print(f"This was the users query: {query}")
-
-#     response = await openai.ChatCompletion.acreate(
-#         model='gpt-4', 
-#             messages=[
-#         {"role": "system", "content": 
-#             f"""You are a helpful personal conversational tutor. Your name is Vortex. You are a personal tutor that makes learning intuitive.
-#             The users query is being converted from their speech to text so just know that the query might be a bit different to what they said and you can thoughtfully infer the right thing. You don't have to tell the users this just say you are a conversational ai tutor that can both hear what they say, see whats on their screen and know how to be their best personal tutor. 
-            
-#             You can understand the the image content shown on the users screen. The content of the image might be returned to you (after some cv processing) as a text, or latex. 
-            
-#             Here is the image content: ( "{image_content}" .)  Make sure to only pay attention to the useful part of the image content. The cv processing might provide extraneous informarion about the image. 
-            
-#             Before proceeding to answer the users question make sure you FULLY understand everything currently being shown on the screen.
-            
-#             If its in latex form make sure you covert it internally so something generally readable. You shouldn't be responding to the user in latex format but in the normal languages the teacher would use like "raised to the power of" for ^ or stuffs like that. 
-            
-#             You also know that they returned this as their preferred learning style: ('{user_style}') 
-            
-#             So your task is to explain thier query in a way that answers them directly in relation to helping them understand whats on the screen according to their learning style.
-            
-#             Additionally You also know that they returned this as thier hobby: ( '{user_hobby}'. )
-            
-#             Do not go further to use analogies if the users query doesn't warrant this. Please be thoughtful and you don't need to always use analogies for a simple direct question that warrants a direct useful response. 
-            
-#             IF and only IF requested by the user, you can explain it in a way that uses a thoughful analogy that is relatable based on ONE of their hobbies. 
-            
-#             But remember your goal is to respond to the users query directly. These are just additional contexts you can use as per the users query. 
-            
-#             Return a concise and succint as appropriate response to fit a 1 minute voice over. Remeber to make sure you write out your response that includes symbols in the normal way the student will understand when the tts reads it out loud. We will be directly converting your text to speech using google text to speech and play it to the user. so stuff like ">" you should write it as "greater than" and stuff like exponential you should write it as "raised to the power of" 
-            
-#             Lastly MAKE SURE to ALWAYS limite your response to NO MORE than *100 words* Very important!. 
-        
-#           """},
-#         {"role": "user", "content": query}
-#     ],
-#         temperature=0.4, 
-#         stream=True
-#     )
-
-#     async def text_iterator():
-#         async for chunk in response:
-#             delta = chunk['choices'][0]["delta"]
-#             if 'content' in delta:
-#                 yield delta["content"]
-#             else:
-#                 break
-
-#     await text_to_speech_input_streaming(VOICE_ID, text_iterator(), websocket)
-    
-
 
 async def chat_completion(query: str, websocket: WebSocket):
     image_content = redis_client.get('latest_image_content').decode('utf-8') if redis_client.get('latest_image_content') else None
+    
+    user_data = USERS.get('default_user', {})
+    user_style = user_data.get('style', 'default style if not found')
+    user_hobby = user_data.get('hobby', 'default hobby if not found')
+    print(f"This was the users query: {query}")
 
     # Prepare message payload for OpenAI API including the image
     messages = [
+        {
+            "role": "system",
+            "content": 
+            f"""You are a helpful personal conversational tutor. Your name is Vortex. You are a personal tutor that makes learning intuitive.
+                The users query is being converted from their speech to text so just know that the query might be a bit different to what they said and you can thoughtfully infer the right thing. You don't have to tell the users this just say you are a conversational ai tutor that can both hear what they say, see whats on their screen and know how to be their best personal tutor. 
+                You can understand the the image content shown on the users screen. You using the image vision processing to do this. 
+                
+                Before proceeding to answer the users question make sure you FULLY understand everything currently being shown on the screen. (On the case that they upload an image)
+                You also know that they returned this as their preferred learning style: ('{user_style}') 
+                
+                So your task is to explain their query in a way that answers them directly in relation to helping them understand whats on the screen according to their learning style.
+              
+                Additionally You also know that they returned this as their hobby: ('{user_hobby}'). So you can use analogies related to their hobby to help them understand better using associative chaining. 
+              
+                Do not go further to use analogies if the users query doesn't warrant this. Please be thoughtful and you don't need to always use analogies for a simple direct question that warrants a direct useful response. 
+              
+                IF and only IF requested by the user, you can explain it in a way that uses a thoughtful analogy that is relatable based on ONE of their hobbies. 
+              
+                But remember your goal is to respond to the users query directly. These are just additional contexts you can use as per the users query. 
+              
+                Return a concise and succinct as appropriate response to fit a 1 minute voice over. Remember to make sure you write out your response that includes symbols in the normal way the student will understand when the tts reads it out loud. We will be directly converting your text to speech and play it to the user. so stuff like ">" you should write it as "greater than" and stuff like exponential you should write it as "raised to the power of" 
+              
+                Lastly MAKE SURE to ALWAYS limit your response to NO MORE than *100 words* Very important!."""
+        },
         {"role": "user", "content": query}
     ]
 
@@ -257,24 +219,17 @@ async def chat_completion(query: str, websocket: WebSocket):
     
     async def text_iterator(response):
         async for part in response:
-            # Extracting content from ChatCompletionChunk objects
             for choice in part.choices:
                 content = choice.delta.content
                 if content:
-                    # Yielding content directly
                     yield content
-                # Handle case where 'content' is None
                 if content is None and choice.finish_reason == 'stop':
-                    return  #
+                    return
 
     await text_to_speech_input_streaming(VOICE_ID, text_iterator(response), websocket)
 
 
 
-#FLASK UTILS
-
-APP_KEY = "3c9a7ad798ebeb8d5c6b74d30b902c38aa1c56cd1cc4d78f10cdc4ae4bbd88aa"
-APP_ID = "insightai_c0fe0f_bf33f1"
 async def identify_learning_style_and_hobby(transcript):
     """
     Identify the learning style and hobby from the given transcript using OpenAI API.
@@ -304,32 +259,7 @@ async def identify_learning_style_and_hobby(transcript):
 
     return style_summary, experience_summary
 
-
-
-#for mathpix
-def extract_image_content(image_path):
-    """
-    Extract content from an image using the Mathpix API.
-    """
-    r = requests.post("https://api.mathpix.com/v3/text",
-        files={"file": open(image_path, "rb")},
-        data={
-            "options_json": json.dumps({
-                "math_inline_delimiters": ["$", "$"],
-                "rm_spaces": True
-            })
-        },
-        headers={
-            "app_id": APP_ID,
-            "app_key": APP_KEY
-        }
-    )
-    return json.dumps(r.json(), indent=4, sort_keys=True)
-
-##FLASK ROUTES
-# A dictionary to store user information, e.g., learning style and hobby
 USERS = {}
-
 
 
 class OnboardingRequest(BaseModel):
@@ -360,6 +290,7 @@ async def onboarding(request_data: OnboardingRequest):
     return {"message": "Onboarding successful", "style": style_summary, "experience": experience_summary}
 
     
+
 
 latest_image_content = None  # Variable to hold the latest image content
 
