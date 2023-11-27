@@ -243,7 +243,7 @@ async def chat_completion(query: str, websocket: WebSocket):
         }
         messages.append(image_message)
 
-    response = await openai.ChatCompletion.create(
+    response = await openai.ChatCompletion.acreate(
         model="gpt-4-vision-preview",
         messages=messages,
         max_tokens=300, 
