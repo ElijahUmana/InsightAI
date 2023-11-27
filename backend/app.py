@@ -17,6 +17,7 @@ from datetime import datetime
 import os
 from uuid import uuid4
 import redis
+from openai import AsyncOpenAI
 import base64
 
 
@@ -45,7 +46,7 @@ ELEVENLABS_API_KEY = 'fb1d27b5fb4d1ceb38083a558f24f1cd'
 # OpenAI Configuration
 openai.api_key = OPENAI_API_KEY
 
-
+client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 latest_image_path = None 
 
@@ -150,6 +151,7 @@ async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
 
         try:
             async for text in text_chunker(text_iterator):
+                print(f"this is the text from eleven labs: {text}")
                 await elevenlabs_ws.send(json.dumps({"text": text, "try_trigger_generation": True}))
 
             await elevenlabs_ws.send(json.dumps({"text": ""}))
@@ -160,144 +162,145 @@ async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
             print(f"An error occurred: {e}")
             listener_task.cancel()
 
-async def chat_completion(query: str, websocket: WebSocket):
-    
-        # Assuming 'default_image' and 'default_user' are placeholders for actual data
-    image_content = redis_client.get('latest_image_content')
-    image_content = image_content.decode('utf-8') if image_content else 'no image provided'
-
-
-    # Print out the image content for debugging
-    print(f"Image content being used: {image_content}")
-
-
-    
-    user_data = USERS.get('default_user', {})
-    user_style = user_data.get('style', 'default style if not found')
-    user_hobby = user_data.get('hobby', 'default hobby if not found')
-    print(f"This was the users query: {query}")
-
-    response = await openai.ChatCompletion.acreate(
-        model='gpt-4', 
-            messages=[
-        {"role": "system", "content": 
-            f"""You are a helpful personal conversational tutor. Your name is Vortex. You are a personal tutor that makes learning intuitive.
-            The users query is being converted from their speech to text so just know that the query might be a bit different to what they said and you can thoughtfully infer the right thing. You don't have to tell the users this just say you are a conversational ai tutor that can both hear what they say, see whats on their screen and know how to be their best personal tutor. 
-            
-            You can understand the the image content shown on the users screen. The content of the image might be returned to you (after some cv processing) as a text, or latex. 
-            
-            Here is the image content: ( "{image_content}" .)  Make sure to only pay attention to the useful part of the image content. The cv processing might provide extraneous informarion about the image. 
-            
-            Before proceeding to answer the users question make sure you FULLY understand everything currently being shown on the screen.
-            
-            If its in latex form make sure you covert it internally so something generally readable. You shouldn't be responding to the user in latex format but in the normal languages the teacher would use like "raised to the power of" for ^ or stuffs like that. 
-            
-            You also know that they returned this as their preferred learning style: ('{user_style}') 
-            
-            So your task is to explain thier query in a way that answers them directly in relation to helping them understand whats on the screen according to their learning style.
-            
-            Additionally You also know that they returned this as thier hobby: ( '{user_hobby}'. )
-            
-            Do not go further to use analogies if the users query doesn't warrant this. Please be thoughtful and you don't need to always use analogies for a simple direct question that warrants a direct useful response. 
-            
-            IF and only IF requested by the user, you can explain it in a way that uses a thoughful analogy that is relatable based on ONE of their hobbies. 
-            
-            But remember your goal is to respond to the users query directly. These are just additional contexts you can use as per the users query. 
-            
-            Return a concise and succint as appropriate response to fit a 1 minute voice over. Remeber to make sure you write out your response that includes symbols in the normal way the student will understand when the tts reads it out loud. We will be directly converting your text to speech using google text to speech and play it to the user. so stuff like ">" you should write it as "greater than" and stuff like exponential you should write it as "raised to the power of" 
-            
-            Lastly MAKE SURE to ALWAYS limite your response to NO MORE than *100 words* Very important!. 
-        
-          """},
-        {"role": "user", "content": query}
-    ],
-        temperature=0.4, 
-        stream=True
-    )
-
-    async def text_iterator():
-        async for chunk in response:
-            print(chunk)
-            delta = chunk['choices'][0]["delta"]
-            if 'content' in delta:
-                yield delta["content"]
-            else:
-                break
-
-    await text_to_speech_input_streaming(VOICE_ID, text_iterator(), websocket)
-    
-
-
 # async def chat_completion(query: str, websocket: WebSocket):
-#     image_content = redis_client.get('latest_image_content').decode('utf-8') if redis_client.get('latest_image_content') else None
-
-#     # Prepare message payload for OpenAI API including the image
-#     messages = [
-#         {"role": "user", "content": query}
-#     ]
-
-#     if image_content:
-#         image_message = {
-#             "role": "user",
-#             "content": [
-#                 {"type": "text", "text": query},
-#                 {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_content}"}}
-#             ]
-#         }
-#         messages.append(image_message)
-
-#     response = await client.chat.completions.create(
-#         model="gpt-4-vision-preview",
-#         messages=messages,
-#         max_tokens=300, 
-#         stream=True,
-#         temperature=0.4
-#     )
     
+#         # Assuming 'default_image' and 'default_user' are placeholders for actual data
+#     image_content = redis_client.get('latest_image_content')
+#     image_content = image_content.decode('utf-8') if image_content else 'no image provided'
+
+
+#     # Print out the image content for debugging
+#     print(f"Image content being used: {image_content}")
+
+
+    
+#     user_data = USERS.get('default_user', {})
+#     user_style = user_data.get('style', 'default style if not found')
+#     user_hobby = user_data.get('hobby', 'default hobby if not found')
+#     print(f"This was the users query: {query}")
+
+#     response = await openai.ChatCompletion.acreate(
+#         model='gpt-4', 
+#             messages=[
+#         {"role": "system", "content": 
+#             f"""You are a helpful personal conversational tutor. Your name is Vortex. You are a personal tutor that makes learning intuitive.
+#             The users query is being converted from their speech to text so just know that the query might be a bit different to what they said and you can thoughtfully infer the right thing. You don't have to tell the users this just say you are a conversational ai tutor that can both hear what they say, see whats on their screen and know how to be their best personal tutor. 
+            
+#             You can understand the the image content shown on the users screen. The content of the image might be returned to you (after some cv processing) as a text, or latex. 
+            
+#             Here is the image content: ( "{image_content}" .)  Make sure to only pay attention to the useful part of the image content. The cv processing might provide extraneous informarion about the image. 
+            
+#             Before proceeding to answer the users question make sure you FULLY understand everything currently being shown on the screen.
+            
+#             If its in latex form make sure you covert it internally so something generally readable. You shouldn't be responding to the user in latex format but in the normal languages the teacher would use like "raised to the power of" for ^ or stuffs like that. 
+            
+#             You also know that they returned this as their preferred learning style: ('{user_style}') 
+            
+#             So your task is to explain thier query in a way that answers them directly in relation to helping them understand whats on the screen according to their learning style.
+            
+#             Additionally You also know that they returned this as thier hobby: ( '{user_hobby}'. )
+            
+#             Do not go further to use analogies if the users query doesn't warrant this. Please be thoughtful and you don't need to always use analogies for a simple direct question that warrants a direct useful response. 
+            
+#             IF and only IF requested by the user, you can explain it in a way that uses a thoughful analogy that is relatable based on ONE of their hobbies. 
+            
+#             But remember your goal is to respond to the users query directly. These are just additional contexts you can use as per the users query. 
+            
+#             Return a concise and succint as appropriate response to fit a 1 minute voice over. Remeber to make sure you write out your response that includes symbols in the normal way the student will understand when the tts reads it out loud. We will be directly converting your text to speech using google text to speech and play it to the user. so stuff like ">" you should write it as "greater than" and stuff like exponential you should write it as "raised to the power of" 
+            
+#             Lastly MAKE SURE to ALWAYS limite your response to NO MORE than *100 words* Very important!. 
+        
+#           """},
+#         {"role": "user", "content": query}
+#     ],
+#         temperature=0.4, 
+#         stream=True
+#     )
+
 #     async def text_iterator():
-#         async for part in response:
-#             print(part)
-#             delta = part.choices[0].delta
+#         async for chunk in response:
+#             delta = chunk['choices'][0]["delta"]
 #             if 'content' in delta:
-#                 yield delta["content"]   
+#                 yield delta["content"]
 #             else:
 #                 break
 
 #     await text_to_speech_input_streaming(VOICE_ID, text_iterator(), websocket)
+    
+
+
+async def chat_completion(query: str, websocket: WebSocket):
+    image_content = redis_client.get('latest_image_content').decode('utf-8') if redis_client.get('latest_image_content') else None
+
+    # Prepare message payload for OpenAI API including the image
+    messages = [
+        {"role": "user", "content": query}
+    ]
+
+    if image_content:
+        image_message = {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": query},
+                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_content}"}}
+            ]
+        }
+        messages.append(image_message)
+
+    response = await client.chat.completions.create(
+        model="gpt-4-vision-preview",
+        messages=messages,
+        max_tokens=300, 
+        stream=True,
+        temperature=0.4
+    )
+    
+    async def text_iterator(response):
+        async for part in response:
+            # Extracting content from ChatCompletionChunk objects
+            for choice in part.choices:
+                if 'content' in choice.delta:
+                    yield choice.delta['content']
+                # Handle case where 'content' is None
+                if choice.delta.get('content') is None and choice.finish_details and choice.finish_details.get('type') == 'stop':
+                    return  # Stop iterating when finish reason is 'stop'
+
+    await text_to_speech_input_streaming(VOICE_ID, text_iterator(response), websocket)
+
 
 
 #FLASK UTILS
 
 APP_KEY = "3c9a7ad798ebeb8d5c6b74d30b902c38aa1c56cd1cc4d78f10cdc4ae4bbd88aa"
 APP_ID = "insightai_c0fe0f_bf33f1"
-# async def identify_learning_style_and_hobby(transcript):
-#     """
-#     Identify the learning style and hobby from the given transcript using OpenAI API.
-#     """
-#     messages_experience = [
-#         {"role": "system", "content": "You are a helpful assistant that is concise."},
-#         {"role": "user", "content": f"This is the user's response: '{transcript}'. Identify any mentioned hobbies or professional experience."}
-#     ]
+async def identify_learning_style_and_hobby(transcript):
+    """
+    Identify the learning style and hobby from the given transcript using OpenAI API.
+    """
+    messages_experience = [
+        {"role": "system", "content": "You are a helpful assistant that is concise."},
+        {"role": "user", "content": f"This is the user's response: '{transcript}'. Identify any mentioned hobbies or professional experience."}
+    ]
 
-#     messages_style = [
-#         {"role": "system", "content": "You are a helpful assistant."},
-#         {"role": "user", "content": f"This is the user's response: '{transcript}'. Identify the individual's preferred learning style."}
-#     ]
+    messages_style = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": f"This is the user's response: '{transcript}'. Identify the individual's preferred learning style."}
+    ]
 
-#     experience_response = await client.chat.completions.create(
-#         model="gpt-4",
-#         messages=messages_experience
-#     )
+    experience_response = await client.chat.completions.create(
+        model="gpt-4",
+        messages=messages_experience
+    )
 
-#     style_response = await client.chat.completions.create(
-#         model="gpt-4",
-#         messages=messages_style
-#     )
+    style_response = await client.chat.completions.create(
+        model="gpt-4",
+        messages=messages_style
+    )
 
-#     experience_summary = experience_response.choices[0].message.content.strip()
-#     style_summary = style_response.choices[0].message.content.strip()
+    experience_summary = experience_response.choices[0].message.content.strip()
+    style_summary = style_response.choices[0].message.content.strip()
 
-#     return style_summary, experience_summary
+    return style_summary, experience_summary
 
 
 
@@ -376,23 +379,16 @@ async def upload_image(file: UploadFile = File(...)):
 
         image_key = str(uuid4())
         temp_file_name = f"./temp_image_{image_key}.png"
-        
-        # Save the uploaded file
         with open(temp_file_name, "wb") as buffer:
             buffer.write(file.file.read())
-        print(f"Image saved to {temp_file_name}")
 
-        # Process the image and store OCR content in Redis
-        image_content = extract_image_content(temp_file_name)
-        redis_client.set('latest_image_content', image_content)
+        # Convert the image to base64 and store in Redis
+        base64_image = encode_image(temp_file_name)
+        redis_client.set('latest_image_content', base64_image)
 
-        # Update latest_image_path with the new image
         latest_image_path = temp_file_name
-        print(f"Image stored at {latest_image_path}")
-
-        return JSONResponse(content={"message": "Image uploaded and processed successfully"}, status_code=200)
+        return JSONResponse(content={"message": "Image uploaded successfully"}, status_code=200)
     except Exception as e:
-        print(f"Error in /upload-image: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
     
