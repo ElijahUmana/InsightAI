@@ -254,6 +254,8 @@ async def chat_completion(query: str, websocket: WebSocket):
                 IF and only IF requested by the user, you can explain it in a way that uses a thoughtful analogy that is relatable based on ONE of their hobbies. 
               
                 But remember your goal is to respond to the users query directly. These are just additional contexts you can use as per the users query."       
+                
+                VERY IMPORTANT:  Make sure that the text you return is in a way that can be read out loud as words. We are using a text to speech to return your response to the user as sound. Especially for mathematical stuffs make sure not to output your respoonse in a way that can not be read by the text to speech easily as a word!
             """
               
         },
