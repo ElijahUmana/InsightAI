@@ -148,7 +148,6 @@ function About() {
                 if (response.status === 200) {
                     const blobUrl = URL.createObjectURL(response.data);
                     setProcessedImage(blobUrl);
-                    setFiles([new File([response.data], 'redirected-image.png', { type: 'image/png' })]);
                 } else {
                     console.error('Failed to fetch the processed image:', response.statusText);
                 }
