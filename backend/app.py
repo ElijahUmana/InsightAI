@@ -253,9 +253,7 @@ async def chat_completion(query: str, websocket: WebSocket):
               
                 IF and only IF requested by the user, you can explain it in a way that uses a thoughtful analogy that is relatable based on ONE of their hobbies. 
               
-                But remember your goal is to respond to the users query directly. These are just additional contexts you can use as per the users query. 
-              
-                Remember to make sure you write out your response that includes symbols in the normal way the student will understand when the tts reads it out loud. We will be directly converting your text to speech and play it to the user. so stuff like ">" you should write it as "greater than" and stuff like exponential you should write it as "raised to the power of"       
+                But remember your goal is to respond to the users query directly. These are just additional contexts you can use as per the users query."       
             """
               
         },
