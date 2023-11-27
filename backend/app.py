@@ -255,7 +255,7 @@ async def chat_completion(query: str, websocket: WebSocket):
         temperature=0.4
     )
     
-    async def text_iterator(response):
+    async def text_iterator():
         async for part in response:
             print(part)
             delta = part.choices[0].delta
@@ -264,7 +264,7 @@ async def chat_completion(query: str, websocket: WebSocket):
             else:
                 break
 
-    await text_to_speech_input_streaming(VOICE_ID, text_iterator(response), websocket)
+    await text_to_speech_input_streaming(VOICE_ID, text_iterator(), websocket)
 
 
 #FLASK UTILS
