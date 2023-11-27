@@ -1,4 +1,6 @@
 import asyncio
+import nltk
+nltk.download('punkt')
 import websockets
 import json
 import openai
@@ -19,7 +21,7 @@ from uuid import uuid4
 import redis
 from openai import AsyncOpenAI
 import base64
-
+from nltk.tokenize import sent_tokenize
 
 app = FastAPI()
 
@@ -104,19 +106,19 @@ async def websocket_endpoint(websocket: WebSocket):
     await chat_completion(latest_transcript, websocket)
 
 async def text_chunker(chunks):
-    """Split text into chunks, ensuring to not break sentences."""
-    splitters = (".", ",", "?", "!", ";", ":", "—", "-", "(", ")", "[", "]", "}", " ")
+    """Improved split text into chunks using NLTK for natural sentence boundaries."""
     buffer = ""
-    async for text in chunks:
-        if buffer.endswith(splitters):
-            yield buffer + " "
-            buffer = text
-        elif text.startswith(splitters):
-            yield buffer + text[0] + " "
-            buffer = text[1:]
-        else:
-            buffer += text
 
+    async for text in chunks:
+        buffer += text
+        sentences = sent_tokenize(buffer)
+
+        # If more than one sentence is identified, yield all but the last one
+        if len(sentences) > 1:
+            yield " ".join(sentences[:-1]) + " "
+            buffer = sentences[-1]
+
+    # Yield any remaining text in the buffer
     if buffer:
         yield buffer + " "
 
