@@ -163,22 +163,15 @@ function About() {
     // }, [isRedirected, setFiles, setProcessedImage]);
     
 
-
+    
     useEffect(() => {
         const fetchProcessedImage = async () => {
             try {
-                const response = await axios.get('https://insightai-backend-c99c36a74d36.herokuapp.com/get-processed-image');
+                const response = await axios.get('https://insightai-backend-c99c36a74d36.herokuapp.com/get-processed-image', { responseType: 'blob' });
                 if (response.status === 200) {
-                    const imageUrl = response.data.imageUrl;
-                    setProcessedImage(imageUrl);
-                    fetch(imageUrl)
-                        .then(response => response.blob())  // Convert the response to a blob
-                        .then(blob => {
-                            const file = new File([blob], 'redirected-image.png', { type: 'image/png' });
-                            setFiles([file]);  // Update the files state with the obtained file
-                            // setIsUploaded(true);  // Set isUploaded to true here
-                        })
-                        .catch(error => console.error('Failed to fetch image file:', error));
+                    const blobUrl = URL.createObjectURL(response.data);
+                    setProcessedImage(blobUrl);
+                    setFiles([new File([response.data], 'redirected-image.png', { type: 'image/png' })]);
                 } else {
                     console.error('Failed to fetch the processed image:', response.statusText);
                 }
@@ -187,13 +180,11 @@ function About() {
             }
         };
     
-        
         if (isRedirected) {
             fetchProcessedImage();
         }
     }, [isRedirected, setFiles]);
-    
-    
+
     useEffect(() => {
         if (isRedirected) {
             setIsUploaded(true);
