@@ -278,13 +278,11 @@ async def onboarding(request_data: OnboardingRequest):
 
     transcript = request_data.text
 
-    # Extract the user's learning style and any mentioned hobby/experience
-    style_summary, experience_summary = identify_learning_style_and_hobby(transcript)
+    # Await the result of identify_learning_style_and_hobby function
+    style_summary, experience_summary = await identify_learning_style_and_hobby(transcript)
 
     # Store the extracted data for the user
     USERS['default_user'] = {'style': style_summary, 'hobby': experience_summary}
-
-    # Cleanup: remove temporary files (if any)
 
     # Return a success message along with the extracted data
     return {"message": "Onboarding successful", "style": style_summary, "experience": experience_summary}
