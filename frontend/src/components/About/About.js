@@ -82,8 +82,8 @@ function About() {
     const [countdown, setCountdown] = useState(null);
     const [currentCount, setCurrentCount] = useState(null);
     const backendUrl = 'https://insightai-backend-c99c36a74d36.herokuapp.com';
-    const isFirstLoad = useRef(true);
     const dragDropRef = useRef(null); // Reference to DragDropFiles component
+    const firstLoadRef = useRef(true);
 
     
 
@@ -140,14 +140,23 @@ function About() {
     }, []);
 
     useEffect(() => {
-        if (isRedirected && isFirstLoad.current) {
-            isFirstLoad.current = false;
-            getImageFromUrlParam(); // Handle redirected image
+        if (isRedirected) {
+            if (firstLoadRef.current) {
+                // First load and redirected
+                firstLoadRef.current = false;
+                getImageFromUrlParam(); // Handle redirected image
+            } else {
+                // Subsequent load and redirected
+                // Insert the logic for this specific scenario here
+                dragDropRef.current && dragDropRef.current.handleCancel();
+            }
         } else {
-            // On page refresh, irrespective of whether it's a redirect or a normal upload
-            if (!isFirstLoad.current) {
+            // Not redirected
+            if (!firstLoadRef.current) {
+                // This is a reload and not the first load
                 dragDropRef.current && dragDropRef.current.handleCancel(); // Call handleCancel
             }
+            firstLoadRef.current = false;
         }
     }, [isRedirected]);
 
@@ -155,7 +164,7 @@ function About() {
     useEffect(() => {
         const fetchProcessedImage = async () => {
             try {
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                await new Promise(resolve => setTimeout(resolve, 4000));
                 const response = await axios.get('https://insightai-backend-c99c36a74d36.herokuapp.com/get-processed-image');
                 console.log("Received response for processed image:", response);
                 if (response.status === 200) {
