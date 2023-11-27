@@ -139,14 +139,46 @@ function About() {
 
 
 
+    // useEffect(() => {
+    //     const fetchProcessedImage = async () => {
+    //         try {
+    //             const response = await axios.get('https://insightai-backend-c99c36a74d36.herokuapp.com/get-processed-image');
+    //             console.log("Received response for processed image:", response);
+    //             if (response.status === 200) {
+    //                 const blobUrl = URL.createObjectURL(response.data);
+    //                 setProcessedImage(blobUrl);
+    //             } else {
+    //                 console.error('Failed to fetch the processed image:', response.statusText);
+    //             }
+    //         } catch (error) {
+    //             console.error('Error fetching the processed image:', error);
+    //         }
+    //     };
+    
+    //     if (isRedirected) {
+    //         console.log("isRedirected is true, fetching processed image...");
+
+    //         fetchProcessedImage();
+    //     }
+    // }, [isRedirected, setFiles, setProcessedImage]);
+    
+
+
     useEffect(() => {
         const fetchProcessedImage = async () => {
             try {
                 const response = await axios.get('https://insightai-backend-c99c36a74d36.herokuapp.com/get-processed-image');
-                console.log("Received response for processed image:", response);
                 if (response.status === 200) {
-                    const blobUrl = URL.createObjectURL(response.data);
-                    setProcessedImage(blobUrl);
+                    const imageUrl = response.data.imageUrl;
+                    setProcessedImage(imageUrl);
+                    fetch(imageUrl)
+                        .then(response => response.blob())  // Convert the response to a blob
+                        .then(blob => {
+                            const file = new File([blob], 'redirected-image.png', { type: 'image/png' });
+                            setFiles([file]);  // Update the files state with the obtained file
+                            // setIsUploaded(true);  // Set isUploaded to true here
+                        })
+                        .catch(error => console.error('Failed to fetch image file:', error));
                 } else {
                     console.error('Failed to fetch the processed image:', response.statusText);
                 }
@@ -155,17 +187,14 @@ function About() {
             }
         };
     
+        
         if (isRedirected) {
-            console.log("isRedirected is true, fetching processed image...");
-
             fetchProcessedImage();
         }
-    }, [isRedirected, setFiles, setProcessedImage]);
-    
-
+    }, [isRedirected, setFiles]);
     
     
-        useEffect(() => {
+    useEffect(() => {
         if (isRedirected) {
             setIsUploaded(true);
         }
