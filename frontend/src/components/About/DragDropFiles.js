@@ -113,10 +113,6 @@ const DragDropFiles = ({
         }
     };
 
-    useImperativeHandle(ref, () => ({
-        handleCancel
-    }));
-
     if (files || isUploaded || processedImage) {
         return (
             <>
