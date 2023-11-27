@@ -258,10 +258,10 @@ async def chat_completion(query: str, websocket: WebSocket):
         async for part in response:
             print(part)
             delta = part.choices[0].delta
-            if 'content' in delta:
+            if 'content' in delta and delta["content"]:
                 yield delta["content"]
             else:
-                break
+                continue
 
     await text_to_speech_input_streaming(VOICE_ID, text_iterator(response), websocket)
 
