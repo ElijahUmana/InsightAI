@@ -253,6 +253,7 @@ async def chat_completion(query: str, websocket: WebSocket):
     
     async def text_iterator():
         async for chunk in response:
+            print(chunk)
             delta = chunk['choices'][0]["delta"]
             if 'content' in delta:
                 yield delta["content"]
