@@ -1,20 +1,22 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { useLocation } from "react-router-dom";  // Import useLocation
 import "./About.css";
 import axios from 'axios';
-const DragDropFiles = ({ 
-  handleFile, 
-  processedImage, 
-  clearProcessedImage, 
-  isUploaded, 
-  setIsUploaded, 
-  files,  // Add files here
-  setFiles  // Add setFiles here
-}) => {
-  const [displayImage, setDisplayImage] = useState(processedImage);
-  const inputRef = useRef();
-  const location = useLocation();
+const DragDropFiles = forwardRef((props, ref) => {
+    const {
+        handleFile,
+        processedImage,
+        clearProcessedImage,
+        isUploaded,
+        setIsUploaded,
+        files,
+        setFiles
+    } = props;
 
+    const [displayImage, setDisplayImage] = useState(processedImage);
+    const inputRef = useRef();
+    const location = useLocation();
+    
     useEffect(() => {
       const params = new URLSearchParams(location.search);
       const redirected = params.get('redirected');
@@ -112,6 +114,10 @@ const DragDropFiles = ({
             inputRef.current.value = ''; // Reset the input element's value
         }
     };
+
+    useImperativeHandle(ref, () => ({
+        handleCancel
+    }));
 
     if (files || isUploaded || processedImage) {
         return (

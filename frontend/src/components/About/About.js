@@ -82,6 +82,8 @@ function About() {
     const [countdown, setCountdown] = useState(null);
     const [currentCount, setCurrentCount] = useState(null);
     const backendUrl = 'https://insightai-backend-c99c36a74d36.herokuapp.com';
+    const [isFirstLoad, setIsFirstLoad] = useState(true);
+    const dragDropRef = useRef(null); // Reference to DragDropFiles component
 
     
 
@@ -137,7 +139,19 @@ function About() {
         setIsRedirected(checkRedirected());
     }, []);
 
+    useEffect(() => {
+        if (isRedirected && isFirstLoad) {
+            setIsFirstLoad(false);
+            getImageFromUrlParam(); // Handle redirected image
+        } else {
+            // On page refresh, irrespective of whether it's a redirect or a normal upload
+            dragDropRef.current && dragDropRef.current.handleCancel(); // Call handleCancel
+        }
+    }, [isRedirected, isFirstLoad]);
 
+    useEffect(() => {
+        setIsFirstLoad(false); // Set to false after the first render
+    }, []);
 
     useEffect(() => {
         const fetchProcessedImage = async () => {
@@ -164,31 +178,6 @@ function About() {
         }
     }, [isRedirected, setFiles, setProcessedImage]);
     
-    useEffect(() => {
-        const fetchProcessedImage = async () => {
-            try {
-                const response = await axios.get(`${backendUrl}/get-processed-image`, { responseType: 'blob' });
-                console.log("Received response for processed image:", response);
-    
-                if (response.status === 200) {
-                    const blobUrl = URL.createObjectURL(response.data);
-                    setProcessedImage(blobUrl); // This is now guaranteed to be a blob URL
-                    // No need to setFiles here unless you're going to upload it again
-                } else {
-                    console.error('Failed to fetch the processed image:', response.statusText);
-                }
-            } catch (error) {
-                console.error('Error fetching the processed image:', error);
-                // Log the problematic response data for debugging
-                console.log('Error data:', error.response.data);
-            }
-        };
-    
-        if (isRedirected) {
-            console.log("isRedirected is true, fetching processed image...");
-            fetchProcessedImage();
-        }
-    }, [isRedirected, setProcessedImage]);
     
     
         useEffect(() => {
@@ -565,6 +554,7 @@ function About() {
         <div className="about-container">
             <div className="dropzone-container">
             <DragDropFiles
+                    ref={dragDropRef}
                     handleFile={handleFile}
                     processedImage={processedImage}
                     clearProcessedImage={clearProcessedImage}
