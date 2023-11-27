@@ -16,7 +16,7 @@ const DragDropFiles = forwardRef((props, ref) => {
     const [displayImage, setDisplayImage] = useState(processedImage);
     const inputRef = useRef();
     const location = useLocation();
-    
+
     useEffect(() => {
       const params = new URLSearchParams(location.search);
       const redirected = params.get('redirected');
@@ -159,6 +159,6 @@ const DragDropFiles = forwardRef((props, ref) => {
             <div className="actions"></div>
         </>
     );
-};
+});
 
 export default DragDropFiles;
