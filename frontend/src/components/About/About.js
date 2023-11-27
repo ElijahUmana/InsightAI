@@ -181,9 +181,15 @@ function About() {
         };
     
         if (isRedirected) {
-            fetchProcessedImage();
+            fetchProcessedImage().then(() => {
+                // This is where you reset the redirection after handling the image
+                const params = new URLSearchParams(window.location.search);
+                params.delete('redirected'); // Remove the 'redirected' query parameter
+                navigate(`/${window.location.pathname}?${params.toString()}`, { replace: true });
+                setIsRedirected(null); // Set isRedirected to null
+            });
         }
-    }, [isRedirected, setFiles]);
+    }, [isRedirected,navigate, setFiles]);
 
     useEffect(() => {
         if (isRedirected) {

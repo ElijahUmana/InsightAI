@@ -39,10 +39,12 @@ VOICE_ID = "CYw3kZ02Hs0563khs1Fj"
 ELEVENLABS_API_KEY = 'fb1d27b5fb4d1ceb38083a558f24f1cd'
 
 
-latest_image_path = None 
+
 
 # OpenAI Configuration
 openai.api_key = OPENAI_API_KEY
+
+latest_image_path = None 
 
 @app.post('/clear-image-content')
 async def clear_image_content():
@@ -368,12 +370,19 @@ async def upload_image(file: UploadFile = File(...)):
 async def get_processed_image():
     global latest_image_path
     try:
+        # Check if the latest image path is set and the file exists
         if latest_image_path and os.path.exists(latest_image_path):
             return FileResponse(latest_image_path, media_type='image/png')
+        elif latest_image_path:
+            print(f"File not found at path: {latest_image_path}")
+            raise HTTPException(status_code=404, detail="File not found")
         else:
+            print("No latest image path set")
             raise HTTPException(status_code=404, detail="No image content available")
     except Exception as e:
         print(f"Error in get_processed_image: {e}")
+        # Additional logging for debugging
+        print(f"Exception details: {type(e).__name__}, Args: {e.args}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
