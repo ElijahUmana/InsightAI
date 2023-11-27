@@ -270,47 +270,32 @@ async def chat_completion(query: str, websocket: WebSocket):
 
 APP_KEY = "3c9a7ad798ebeb8d5c6b74d30b902c38aa1c56cd1cc4d78f10cdc4ae4bbd88aa"
 APP_ID = "insightai_c0fe0f_bf33f1"
-
-def identify_learning_style_and_hobby(transcript):
+async def identify_learning_style_and_hobby(transcript):
     """
-    Identify the learning style and hobby from the given transcript.
-    Uses OpenAI API to analyze the transcript content.
+    Identify the learning style and hobby from the given transcript using OpenAI API.
     """
-    ENDPOINT = "https://api.openai.com/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {config.OPENAI_API_KEY}",
-    }
-
-    def make_api_call(messages):
-        data = {
-            "model": "gpt-4",   # Specify the model, adjust if necessary
-            "messages": messages
-        }
-        response = requests.post(ENDPOINT, headers=headers, json=data)
-        response_data = response.json()
-        
-        # Log the full API response for debugging
-        print(response_data)
-
-        if 'choices' in response_data:
-            return response_data['choices'][0]['message']['content'].strip()
-        else:
-            print(f"Unexpected API response for messages: {messages}")
-            return "Error extracting data"
-    
-    # Extract hobbies or experiences
     messages_experience = [
         {"role": "system", "content": "You are a helpful assistant that is concise."},
-        {"role": "user", "content": f"This is the users response: '{transcript}'. From that identify any mentioned hobbies OR professional experience. Respond ONLY in one sentence the identified hobby/professional experience."}
+        {"role": "user", "content": f"This is the user's response: '{transcript}'. Identify any mentioned hobbies or professional experience."}
     ]
-    experience_summary = make_api_call(messages_experience)
 
-    # Extract preferred explanation style
     messages_style = [
-        {"role": "system", "content": "You are a helpful assistant that is concise. "},
-        {"role": "user", "content": f"This is the users response: '{transcript}'. From that identify the individual's preferred learning style that was said. Respond ONLY in one sentence the identified said preferred learning style or any style that was said"}
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": f"This is the user's response: '{transcript}'. Identify the individual's preferred learning style."}
     ]
-    style_summary = make_api_call(messages_style)
+
+    experience_response = await client.chat.completions.create(
+        model="gpt-4",
+        messages=messages_experience
+    )
+
+    style_response = await client.chat.completions.create(
+        model="gpt-4",
+        messages=messages_style
+    )
+
+    experience_summary = experience_response.choices[0].message.content.strip()
+    style_summary = style_response.choices[0].message.content.strip()
 
     return style_summary, experience_summary
 
