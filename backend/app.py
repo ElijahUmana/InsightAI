@@ -126,7 +126,7 @@ async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
     async with websockets.connect(uri) as elevenlabs_ws:
         await elevenlabs_ws.send(json.dumps({
             "text": " ",
-            "voice_settings": {"stability": 0.5, "similarity_boost": True},
+            "voice_settings": {"stability": 0.3, "similarity_boost": True},
             "xi_api_key": ELEVENLABS_API_KEY,
         }))
 
@@ -277,7 +277,7 @@ async def chat_completion(query: str, websocket: WebSocket):
         messages=messages,
         max_tokens=300, 
         stream=True,
-        temperature=0.4
+        temperature=0.5
     )
     
     async def text_iterator(response):
