@@ -259,11 +259,13 @@ async def chat_completion(query: str, websocket: WebSocket):
         async for part in response:
             # Extracting content from ChatCompletionChunk objects
             for choice in part.choices:
-                if 'content' in choice.delta:
-                    yield choice.delta['content']
+                content = choice.delta.content
+                if content:
+                    # Yielding content directly
+                    yield content
                 # Handle case where 'content' is None
-                if choice.delta.get('content') is None and choice.finish_details and choice.finish_details.get('type') == 'stop':
-                    return  # Stop iterating when finish reason is 'stop'
+                if content is None and choice.finish_reason == 'stop':
+                    return  #
 
     await text_to_speech_input_streaming(VOICE_ID, text_iterator(response), websocket)
 
