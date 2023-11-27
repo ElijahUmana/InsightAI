@@ -259,7 +259,7 @@ async def chat_completion(query: str, websocket: WebSocket):
         async for part in response:
             print(part)
             delta = part.choices[0].delta
-            if 'content' in delta and delta["content"]:
+            if 'content' in delta:
                 yield delta["content"]   
             else:
                 break
