@@ -108,6 +108,7 @@ const DragDropFiles = ({
         setFiles(null);
         setIsUploaded(false); // Clear the displayed image
         handleFile(null, false);
+        setDisplayImage(null);
         clearProcessedImage(); // Clear processedImage in parent component
         if (inputRef.current) {
             inputRef.current.value = ''; // Reset the input element's value
