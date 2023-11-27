@@ -1,6 +1,5 @@
 import asyncio
 import nltk
-nltk.download('punkt')
 import websockets
 import json
 import openai
@@ -49,6 +48,18 @@ ELEVENLABS_API_KEY = 'fb1d27b5fb4d1ceb38083a558f24f1cd'
 openai.api_key = OPENAI_API_KEY
 
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+
+
+def setup_nltk():
+    nltk_data_path = 'nltk_data'
+    nltk.data.path.append(nltk_data_path)
+
+    if not os.path.exists(nltk_data_path):
+        os.mkdir(nltk_data_path)
+        nltk.download('punkt', download_dir=nltk_data_path)
+
+# Call the setup function at the start of your application
+setup_nltk()
 
 latest_image_path = None 
 
