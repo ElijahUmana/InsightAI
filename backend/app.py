@@ -150,7 +150,6 @@ async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
 
         try:
             async for text in text_chunker(text_iterator):
-                print(f"this is the text from eleven labs: {text}")
                 await elevenlabs_ws.send(json.dumps({"text": text, "try_trigger_generation": True}))
 
             await elevenlabs_ws.send(json.dumps({"text": ""}))
