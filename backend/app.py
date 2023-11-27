@@ -160,6 +160,67 @@ async def text_to_speech_input_streaming(voice_id, text_iterator, websocket):
         except Exception as e:
             print(f"An error occurred: {e}")
             listener_task.cancel()
+ 
+ 
+
+
+USERS = {}
+
+
+class OnboardingRequest(BaseModel):
+    text: Optional[str] = None
+
+@app.post('/onboarding')
+async def onboarding(request_data: OnboardingRequest):
+    """
+    This route handles the onboarding process for a user.
+    It now expects a JSON payload with the user's text input.
+    """
+
+    # Validate and extract data from request
+    if request_data.text is None:
+        raise HTTPException(status_code=400, detail="Text not provided")
+
+    transcript = request_data.text
+
+    # Await the result of identify_learning_style_and_hobby function
+    style_summary, experience_summary = await identify_learning_style_and_hobby(transcript)
+
+    # Store the extracted data for the user
+    USERS['default_user'] = {'style': style_summary, 'hobby': experience_summary}
+
+    # Return a success message along with the extracted data
+    return {"message": "Onboarding successful", "style": style_summary, "experience": experience_summary}
+
+
+async def identify_learning_style_and_hobby(transcript):
+    """
+    Identify the learning style and hobby from the given transcript using OpenAI API.
+    """
+    messages_experience = [
+        {"role": "system", "content": "You are a helpful assistant that is concise."},
+        {"role": "user", "content": f"This is the user's response: '{transcript}'. Identify any mentioned hobbies or professional experience."}
+    ]
+
+    messages_style = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": f"This is the user's response: '{transcript}'. Identify the individual's preferred learning style."}
+    ]
+
+    experience_response = await client.chat.completions.create(
+        model="gpt-4",
+        messages=messages_experience
+    )
+
+    style_response = await client.chat.completions.create(
+        model="gpt-4",
+        messages=messages_style
+    )
+
+    experience_summary = experience_response.choices[0].message.content.strip()
+    style_summary = style_response.choices[0].message.content.strip()
+
+    return style_summary, experience_summary
     
 
 async def chat_completion(query: str, websocket: WebSocket):
@@ -169,6 +230,8 @@ async def chat_completion(query: str, websocket: WebSocket):
     user_style = user_data.get('style', 'default style if not found')
     user_hobby = user_data.get('hobby', 'default hobby if not found')
     print(f"This was the users query: {query}")
+    print(f"this was the user submitted hobby: {user_hobby}")
+    print(f"this was the user submitted learning style: {user_style}")
 
     # Prepare message payload for OpenAI API including the image
     messages = [
@@ -229,63 +292,6 @@ async def chat_completion(query: str, websocket: WebSocket):
     await text_to_speech_input_streaming(VOICE_ID, text_iterator(response), websocket)
 
 
-
-async def identify_learning_style_and_hobby(transcript):
-    """
-    Identify the learning style and hobby from the given transcript using OpenAI API.
-    """
-    messages_experience = [
-        {"role": "system", "content": "You are a helpful assistant that is concise."},
-        {"role": "user", "content": f"This is the user's response: '{transcript}'. Identify any mentioned hobbies or professional experience."}
-    ]
-
-    messages_style = [
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": f"This is the user's response: '{transcript}'. Identify the individual's preferred learning style."}
-    ]
-
-    experience_response = await client.chat.completions.create(
-        model="gpt-4",
-        messages=messages_experience
-    )
-
-    style_response = await client.chat.completions.create(
-        model="gpt-4",
-        messages=messages_style
-    )
-
-    experience_summary = experience_response.choices[0].message.content.strip()
-    style_summary = style_response.choices[0].message.content.strip()
-
-    return style_summary, experience_summary
-
-USERS = {}
-
-
-class OnboardingRequest(BaseModel):
-    text: Optional[str] = None
-
-@app.post('/onboarding')
-async def onboarding(request_data: OnboardingRequest):
-    """
-    This route handles the onboarding process for a user.
-    It now expects a JSON payload with the user's text input.
-    """
-
-    # Validate and extract data from request
-    if request_data.text is None:
-        raise HTTPException(status_code=400, detail="Text not provided")
-
-    transcript = request_data.text
-
-    # Await the result of identify_learning_style_and_hobby function
-    style_summary, experience_summary = await identify_learning_style_and_hobby(transcript)
-
-    # Store the extracted data for the user
-    USERS['default_user'] = {'style': style_summary, 'hobby': experience_summary}
-
-    # Return a success message along with the extracted data
-    return {"message": "Onboarding successful", "style": style_summary, "experience": experience_summary}
 
     
 
