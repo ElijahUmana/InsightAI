@@ -17,6 +17,7 @@ from datetime import datetime
 import os
 from uuid import uuid4
 import redis
+from openai import AsyncOpenAI
 import base64
 
 
@@ -44,6 +45,8 @@ ELEVENLABS_API_KEY = 'fb1d27b5fb4d1ceb38083a558f24f1cd'
 
 # OpenAI Configuration
 openai.api_key = OPENAI_API_KEY
+
+client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 latest_image_path = None 
 
@@ -243,7 +246,7 @@ async def chat_completion(query: str, websocket: WebSocket):
         }
         messages.append(image_message)
 
-    response = await openai.ChatCompletion.acreate(
+    response = await client.chat.completions.create(
         model="gpt-4-vision-preview",
         messages=messages,
         max_tokens=300, 
@@ -251,16 +254,16 @@ async def chat_completion(query: str, websocket: WebSocket):
         temperature=0.4
     )
     
-    async def text_iterator():
-        async for chunk in response:
-            print(chunk)
-            delta = chunk['choices'][0]["delta"]
+    async def text_iterator(response):
+        async for part in response:
+            print(part)
+            delta = part.choices[0].delta
             if 'content' in delta:
                 yield delta["content"]
             else:
                 break
 
-    await text_to_speech_input_streaming(VOICE_ID, text_iterator(), websocket)
+    await text_to_speech_input_streaming(VOICE_ID, text_iterator(response), websocket)
 
 
 #FLASK UTILS
