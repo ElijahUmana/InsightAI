@@ -82,8 +82,6 @@ function About() {
     const [countdown, setCountdown] = useState(null);
     const [currentCount, setCurrentCount] = useState(null);
     const backendUrl = 'https://insightai-backend-c99c36a74d36.herokuapp.com';
-    const dragDropRef = useRef(null); // Reference to DragDropFiles component
-    const firstLoadRef = useRef(true);
 
     
 
@@ -141,25 +139,6 @@ function About() {
 
 
 
-    // useEffect for handling redirects
-    useEffect(() => {
-        if (isRedirected) {
-            getImageFromUrlParam(); // Handle redirected image
-        }
-    }, [isRedirected]);
-
-    // useEffect for handling the first load
-    useEffect(() => {
-        if (firstLoadRef.current) {
-            // It's the first load
-            firstLoadRef.current = false;
-        } else {
-            // It's not the first load
-            dragDropRef.current && dragDropRef.current.handleCancel(); // Call handleCancel
-        }
-    }, []);
-
-
     useEffect(() => {
         const fetchProcessedImage = async () => {
             try {
@@ -185,6 +164,7 @@ function About() {
         }
     }, [isRedirected, setFiles, setProcessedImage]);
     
+
     
     
         useEffect(() => {
@@ -561,7 +541,6 @@ function About() {
         <div className="about-container">
             <div className="dropzone-container">
             <DragDropFiles
-                    ref={dragDropRef}
                     handleFile={handleFile}
                     processedImage={processedImage}
                     clearProcessedImage={clearProcessedImage}

@@ -1,21 +1,19 @@
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "react-router-dom";  // Import useLocation
 import "./About.css";
 import axios from 'axios';
-const DragDropFiles = forwardRef((props, ref) => {
-    const {
-        handleFile,
-        processedImage,
-        clearProcessedImage,
-        isUploaded,
-        setIsUploaded,
-        files,
-        setFiles
-    } = props;
-
-    const [displayImage, setDisplayImage] = useState(processedImage);
-    const inputRef = useRef();
-    const location = useLocation();
+const DragDropFiles = ({ 
+  handleFile, 
+  processedImage, 
+  clearProcessedImage, 
+  isUploaded, 
+  setIsUploaded, 
+  files,  // Add files here
+  setFiles  // Add setFiles here
+}) => {
+  const [displayImage, setDisplayImage] = useState(processedImage);
+  const inputRef = useRef();
+  const location = useLocation();
 
     useEffect(() => {
       const params = new URLSearchParams(location.search);
@@ -99,7 +97,6 @@ const DragDropFiles = forwardRef((props, ref) => {
 
     const handleCancel = async () => {
         // Clear the current image and extracted content
-        console.log("handCancel just called");
         try {
             await axios.post("https://insightai-backend-c99c36a74d36.herokuapp.com/clear-image-content");
             console.log("Cleared current image content from Redis");
@@ -160,6 +157,6 @@ const DragDropFiles = forwardRef((props, ref) => {
             <div className="actions"></div>
         </>
     );
-});
+};
 
 export default DragDropFiles;
