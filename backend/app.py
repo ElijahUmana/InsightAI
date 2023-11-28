@@ -288,7 +288,7 @@ async def chat_completion(query: str, websocket: WebSocket):
     response = await client.chat.completions.create(
         model="gpt-4-vision-preview",
         messages=messages,
-        max_tokens=300, 
+        max_tokens=1000, 
         stream=True,
         temperature=0.5
     )

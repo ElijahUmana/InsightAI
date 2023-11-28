@@ -137,32 +137,6 @@ function About() {
         setIsRedirected(checkRedirected());
     }, []);
 
-
-
-    // useEffect(() => {
-    //     const fetchProcessedImage = async () => {
-    //         try {
-    //             const response = await axios.get('https://insightai-backend-c99c36a74d36.herokuapp.com/get-processed-image');
-    //             console.log("Received response for processed image:", response);
-    //             if (response.status === 200) {
-    //                 const blobUrl = URL.createObjectURL(response.data);
-    //                 setProcessedImage(blobUrl);
-    //             } else {
-    //                 console.error('Failed to fetch the processed image:', response.statusText);
-    //             }
-    //         } catch (error) {
-    //             console.error('Error fetching the processed image:', error);
-    //         }
-    //     };
-    
-    //     if (isRedirected) {
-    //         console.log("isRedirected is true, fetching processed image...");
-
-    //         fetchProcessedImage();
-    //     }
-    // }, [isRedirected, setFiles, setProcessedImage]);
-    
-
     
     useEffect(() => {
         const fetchProcessedImage = async () => {
@@ -230,12 +204,6 @@ function About() {
             dispatch({ type: 'SET_STATE', payload: { received: true } });
         }
     };
-
-    
-
-
-///////
-///////////////////
 
     
 
@@ -420,7 +388,7 @@ function About() {
                         source.connect(gainNode);
     
                         // Adjust the gain value
-                        gainNode.gain.value = 1.5;  // Increase volume
+                        gainNode.gain.value = 2;  // Increase volume
     
                         // Create a destination for the audio
                         const dest = audioContext.createMediaStreamDestination();
@@ -545,14 +513,6 @@ function About() {
     }, [isRecording, isStopping, currentCount, run, stopWithoutFinalizing, stopRecording, isPlaying]);
     
      
-    
-
-    
-
-////////////////////
-///////
-
-
 
 
     return (
