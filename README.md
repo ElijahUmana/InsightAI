@@ -1,8 +1,8 @@
-# InsightAI: Follow your curiosity through a personalized AI learning companion
+# InsightAI: A Personalized AI Learning Companion
 
 ## Overview
 
-InsightAI is designed to revolutionize the learning experience, offering users a unique, intuitive, and deeply personalized educational journey. This innovative app blends advanced image recognition and state-of-the-art language models to provide context-rich, voice-over explanations. Tailored to individual learning styles, InsightAI offers a seamless, interactive, and enriching learning environment.
+InsightAI is an integrated learning environment that allows users to pursue their curiosity with unparalleled depth and precision. This innovative app blends advanced image recognition and state-of-the-art language models to provide context-rich, voice-over explanations. Tailored to individual learning styles, InsightAI offers a seamless, interactive, and enriching learning environment.
 
 *Tutor Interaction in InsightAI*
 <img width="1688" alt="Screenshot 2023-11-30 at 1 01 46 PM" src="https://github.com/ElijahUmana/InsightAI/assets/121345656/7d1440a0-ea24-43b4-94e2-96d50dab1e52">
