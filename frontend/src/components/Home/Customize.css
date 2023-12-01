@@ -3,6 +3,8 @@ body {
     font-family: 'Arial', sans-serif;
 }
 
+
+
 /* Button Styles */
 .started-button {
     margin: 2% auto;
@@ -39,7 +41,7 @@ body {
 /* Description Text Styles */
 .description-container {
     text-align: center; /* Centering text */
-    padding: 0 20px;
+    padding: 0 200px;
     margin-top: 20px;
 }
 

@@ -575,7 +575,7 @@ function About() {
                             <img className="avatar" src={require("./avatar.png")} alt="Avatar" />
                         </div>
                         <div className="media-container">
-                            {displayText && <h5 className="chat-text" style={{ color: "white", fontWeight: "lighter" }}>Hi there! Ask me whatever questions you may have :)</h5>}
+                            {displayText && <h9 className="chat-text" style={{ color: "white", fontWeight: "lighter" }}>Hi there! Ask me whatever questions you may have  :)</h9>}
                             {displayVideo && (
                             <div key="videoKey" className={showVideo ? "video-cropper video-fade-in" : "video-cropper video-fade-out"}>
                                 <video 

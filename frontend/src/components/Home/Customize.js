@@ -41,8 +41,8 @@ function Customize() {
       <Container fluid className="home-section" id="home">
         <Container className="home-content">
           <Row>
-            <Col md={{ span: 6, offset: 3 }} className="home-header">
-              <h1 style={{ paddingBottom: 15 }} className="heading">
+            <Col md={{ span: 15, offset: 30 }} className="home-header">
+              <h1 style={{ paddingBottom: 0 }} className="heading">
                 <strong className="main-name"> InsightAI </strong> offers a
                 customizable experience for every student using Large
                 Language Models
@@ -56,16 +56,13 @@ function Customize() {
       </Container>
       <div className="description-container">
         <p className="description">
-          Please before getting started briefly respond in one sentence your hobbies/professional experience and your preferred learning style.
-          
-          IntrinsicAI will use your response as additional context to create better associative chainings and help you
-          learn more intuitively!
+        Before getting started, please briefly describe below in one sentence your hobbies or professional experience. 
         </p>
       </div>
       <div className="multi-word-input-container">
         <textarea
           className="multi-word-input"
-          placeholder="Enter your prompt"
+          placeholder="Enter response"
           value={text}
           onChange={handleTextChange}
         />
