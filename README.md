@@ -1,4 +1,4 @@
-# InsightAI: Your Personalized AI Learning Companion
+# InsightAI: Follow your curiosity through a personalized AI learning companion
 
 ## Overview
 
