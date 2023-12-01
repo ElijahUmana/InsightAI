@@ -25,6 +25,7 @@ const DragDropFiles = ({
       if (redirected !== 'true') {
           setFiles(null);
           setIsUploaded(false);
+          handleCancel();
           setDisplayImage(null);
           handleFile(null, false);
           clearProcessedImage();
