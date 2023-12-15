@@ -260,9 +260,9 @@ function About() {
                     setShowVideo(false); // Stop the video only if all audio has been played
                 } else {
                     // If there's still audio left to play, set a timeout to check again later
-                    setTimeout(playBufferedAudio, (lastBufferEndTime - audioContext.currentTime) * 2000);
+                    setTimeout(playBufferedAudio, (lastBufferEndTime - audioContext.currentTime) * 4000);
                 }
-            }, 1000);  // 1000 milliseconds delay
+            }, 2000);  // 1000 milliseconds delay
             return;
         }
     
