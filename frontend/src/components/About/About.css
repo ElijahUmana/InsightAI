@@ -1,7 +1,6 @@
 body {
     overflow-x: hidden; /* this will hide horizontal overflow */
-
-    
+    overflow-y: hidden;
 }
 
 
@@ -84,7 +83,7 @@ body {
 
 
 .video-cropper {
-    transform: translate(-145%);  /* This should move the video more to the left */
+    transform: translate(-141%);  /* This should move the video more to the left */
 }
 
 
