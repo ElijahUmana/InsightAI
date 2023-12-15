@@ -388,7 +388,7 @@ function About() {
                         source.connect(gainNode);
     
                         // Adjust the gain value
-                        gainNode.gain.value = 2;  // Increase volume
+                        gainNode.gain.value = 1.5;  // Increase volume
     
                         // Create a destination for the audio
                         const dest = audioContext.createMediaStreamDestination();
