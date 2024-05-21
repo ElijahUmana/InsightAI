@@ -6,5 +6,5 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 ASSEMBLYAI_TOKEN = os.getenv("ASSEMBLYAI_TOKEN")
-MONGODB_URL = os.getenv("MONGODB_URL")  # Your MongoDB URL
-DB_NAME = os.getenv("DB_NAME")  # Your database name
+MONGODB_URL = os.getenv("MONGODB_URL")
+DB_NAME = os.getenv("DB_NAME")  
