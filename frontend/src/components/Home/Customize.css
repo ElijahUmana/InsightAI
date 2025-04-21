@@ -1,0 +1,94 @@
+/* Global Styles */
+body {
+    font-family: 'Arial', sans-serif;
+}
+
+
+
+/* Button Styles */
+.started-button {
+    margin: 2% auto;
+    width: 200px;
+    padding: 10px;
+    background-color: #a317a3;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.started-button:hover {
+    background-color: #8a148a;
+}
+
+.started-button:active {
+    transform: scale(0.95);
+}
+
+.multi-word-input {
+    background-color: #fff;
+    width: 50%;
+    max-width: 500px;
+    min-width: 300px;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: none;
+    color: #0c0707;
+}
+
+/* Description Text Styles */
+.description-container {
+    text-align: center; /* Centering text */
+    padding: 0 200px;
+    margin-top: 20px;
+}
+
+.multi-word-input-container {
+    width: 100%;
+    margin: 1rem auto;
+    display: flex;
+    flex-direction: column;
+    color: white;
+    align-items: center;
+  }
+  
+
+.description {
+    color: #fff; /* Brightening up the color */
+    font-size: 18px;
+}
+
+/* Section and Header Styles */
+.home-section {
+    background: url('../../Assets/home-main.svg') no-repeat center center/cover;
+    text-align: center; /* Centering content */
+    color: #fff; /* Setting a general color for readability */
+    padding: 50px; /* Adding padding top-bottom for aesthetic spacing */
+}
+
+.home-header h1 {
+    color: #fff;
+    padding-bottom: 10px;
+    margin: 0 auto; /* Centering horizontally and removing vertical default margin */
+    text-align: center; /* Ensuring text is centered */
+    line-height: 3; /* Improving readability with line height */
+    font-size: 2rem; /* Adjusting font size for readability */
+    
+}
+
+.heading {
+    font-weight: bold;
+}
+
+.main-name {
+    color: #a317a3;
+}
+
+/* Responsive Design */
+@media only screen and (max-width: 600px) {
+    .multi-word-input {
+        width: 90%;
+    }
+}

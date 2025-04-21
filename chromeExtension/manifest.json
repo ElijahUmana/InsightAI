@@ -1,0 +1,36 @@
+{
+  "manifest_version": 2,
+  "name": "InsightAI Screenshot",
+  "description": "Take screenshots for InsightAI.",
+  "version": "0.11.5",
+  "permissions": [
+    "activeTab",
+    "<all_urls>",
+    "storage"
+  ],
+  "icons": {
+    "128": "images/icon_128.png",
+    "256": "images/icon_256.png"
+  },
+  "web_accessible_resources": [
+    "src/content.js"
+  ],
+  "browser_action": {
+    "default_popup": "src/popup.html",
+    "default_title": "InsightAI Screenshot",
+    "default_icon": {
+      "128": "images/icon_128.png",
+      "256": "images/icon_256.png"
+    }
+  },
+  "background": {
+    "scripts": [
+      "src/background.js"
+    ]
+  },
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "InsightAI Screenshot"
+    }
+  }
+}

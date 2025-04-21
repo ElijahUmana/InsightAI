@@ -1,0 +1,391 @@
+body {
+    overflow-x: hidden; /* this will hide horizontal overflow */
+    overflow-y: hidden;
+}
+
+
+.loader {
+    margin: 0 auto;
+    min-height: 7.25vh;
+    z-index: 1000;  /* Ensure the loader is on top of other elements */
+    width: 100px;   /* Set a width */
+    height: 100px;  /* Set a height */
+}
+
+.test-loader {
+    display: inline-block;
+    margin: 10px auto; /* Adjust this as needed */
+    z-index: 2000;
+}
+
+
+.about-container {
+    display: flex;
+    
+}
+
+.chat-container {
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    height: 63vh;
+    margin: 0 1rem;
+    margin-top: 9rem;
+    padding: 15rem;
+}
+
+.filler {
+    margin: auto 0;
+}
+
+.audio-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.chat-box {
+    background-color: transparent;
+    height: 80%;
+    margin: auto 0;
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.flex-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; 
+    justify-content: center;
+    height: 100%;
+    position: relative;
+}
+
+.chat-box{
+    white-space: nowrap; /* Prevents text wrapping onto a new line */
+}
+
+
+
+
+
+.chat-text, .video-cropper {
+    top: 0%;
+    text-align: center;
+    transform: translate(-70%, 20px);
+    position: relative;
+}
+
+
+.video-cropper {
+    transform: translate(-141%);  /* This should move the video more to the left */
+}
+
+
+.media-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-left: 550px;
+}
+
+
+.video-cropper {
+    overflow: hidden;
+    width: 200px; /* Or whatever cropping size you want */
+    height: 25px; /* Or whatever cropping size you want */
+    border-radius: 158px; /* Adjust this value to get the desired level of roundness */
+    
+}
+
+.video-to-crop {
+    position: relative;
+    top: -100px; /* Adjust this to crop the top part */
+    left: -10px; /* Adjust this to crop the left part */
+    border-radius: 699px; /* Adjust this value to get the desired level of roundness */
+}
+
+.video-fade-in {
+    animation: fadeIn 1s forwards; /* 1s is the duration, adjust as needed */
+  }
+  
+.video-fade-out {
+    animation: fadeOut 2s forwards;
+  }
+  
+.avatar-container {
+    height: 150px; /* Adjust according to the actual height of the avatar */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    position: absolute;
+}
+
+.response-container {
+    position: relative;
+    height: 400px; /* Provide a fixed height to ensure there's enough space for text/video */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.chat-text {
+    color: white; /* Adjust as needed */
+    font-weight: lighter; /* Adjust as needed */
+    /* Adjust other styles as needed */
+}
+.dropzone-container {
+    /* height: 40vh;
+    background-color: rgba(255, 255, 255, 0.9);
+    margin: 0 1rem;
+    margin-top: 10rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    border-style: dashed;
+    border-color: rgb(190, 32, 190); */
+    animation: fadein 1s ease-in;
+    flex: 3;
+    padding: 0.8rem;
+    width: 70%;
+}
+
+.avatar {
+    max-width: 300px;
+}
+
+.transcript-bar {
+    border: 1px solid #ccc; /* Border around the bar */
+    padding: 10px; /* Padding inside the bar */
+    margin: 10px 0 10px 47px; /* Margin around the bar */
+    overflow-x: auto; /* Horizontal scrolling if the content overflows */
+    white-space: nowrap; /* Keeps the content on a single line */
+}
+
+
+.dropzone-button {
+    /* width: 50%; */
+    padding: 0.5rem 1rem;
+    background-color: rgb(163, 23, 163);
+    color: white;
+    border-style: none;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+}
+
+.dropzone-button:hover {
+    cursor: pointer;
+    background-color: rgba(163, 23, 163, 0.9);
+}
+
+.dropzone-button2 {
+    /* width: 50%; */
+    padding: 0.5rem 1rem;
+    background-color: rgb(163, 23, 163);
+    color: white;
+    border-style: none;
+    border-radius: 0.5rem;
+    margin: 1rem 1rem;
+}
+
+.dropzone-button2:hover {
+    cursor: pointer;
+    background-color: rgba(163, 23, 163, 0.9);
+}
+
+.multi-word-input-container {
+    width: 100%;
+    margin: 1rem auto;
+  }
+  
+.multi-word-input {
+    background-color: white;
+    width: 90%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    resize: none; /* Prevent textarea from being resized by the user */
+     overflow-y: auto; 
+    overflow-wrap: break-word;
+}
+
+.uploaded-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 15px;
+    object-fit: contain;
+    margin: auto auto;
+
+ /* Adjust this value to your liking for more or less rounding */
+}
+
+
+.dropzone {
+    z-index: 100000;
+    height: 55vh;
+    background-color: transparent;
+    margin: 0 1rem;
+    margin-top: 5rem;
+    padding: 1rem;
+    animation: fadein 1s ease-in;
+    border-radius: 15px;  /* This will give rounded corners to the container */
+    overflow: hidden;
+ /* Added to allow scrolling within the rectangular area */
+}
+
+
+.dropzone h4 {
+    color: white;
+}
+
+.dropzone h5 {
+    color: white;
+}
+
+
+.record-title {
+    color: white;
+}
+
+.audio-recorder-container {
+    display: flex;
+    width: 80%;
+    margin: 0 auto;
+    align-items: center;
+    justify-content: center;
+}
+
+.description
+
+
+
+.loader{
+    margin: 0 auto;
+    min-height: 7.25vh;
+}
+
+.no-loader {
+    min-height: 7.25vh;
+}
+
+.recording-button {
+    padding: 0.5rem 1rem;
+    background-color: rgb(163, 23, 163);
+    color: white;
+    border-style: none;
+    border-radius: 0.5rem;
+    margin: 1rem 1rem;
+    transition: 1s;
+}
+
+.recording-button:hover {
+    cursor: pointer;
+    background-color: rgba(163, 23, 163, 0.9);
+    transition: 1s;
+}
+
+.predict-button {
+    padding: 0.5rem 1rem;
+    background-color: rgb(23, 163, 112);
+    color: white;
+    border-style: none;
+    border-radius: 0.5rem;
+    margin: 1rem 1rem;
+    transition: 1s;
+}
+
+.predict-button:hover {
+    cursor: pointer;
+    background-color: rgb(23, 163, 112);
+    transition: 1s;
+}
+
+.started-button2 {
+    top: 5rem;
+    /* margin:0 auto; */
+    padding: 0.5rem 1rem;
+    background-color: rgb(163, 23, 163);
+    color: white;
+    border-style: none;
+    border-radius: 0.5rem;
+    transition: 1s;
+    position: absolute;
+    width: 25%;
+    left: 37.5%;
+    animation: fadein 1s ease-in;
+}
+
+.started-button2:hover {
+    cursor: pointer;
+    transition: 1s;
+    background-color: rgba(163, 23, 163, 0.9);
+}
+
+.actions{
+    min-height: 10vh;
+}
+
+
+.instruction-text {
+    margin-bottom: 20px; /* Adjust this value to add more or less space below the instruction text */
+}
+
+.transcript-bar {
+    margin-top: 100px;
+ /* Adjust this value to add more or less space above the transcript bar */
+}
+
+.transcript-bar p {
+    font-size: 20px; /* Adjust this value to your desired size */
+}
+
+.transcript-bar {
+    border: 1px solid #ccc; /* Border around the bar */
+    padding: 10px; /* Padding inside the bar */
+    margin: 60px 30px 70px 20px; /* Margin around the bar */
+    overflow-x: auto; /* Horizontal scrolling if the content overflows */
+    white-space: normal; /* Allows the content to wrap to a new line */
+    width: 100%; /* Fixed width to prevent the bar from growing wider */
+}
+
+#waveform {
+    width: 100%;
+    height: 100px; /* Adjust this value */
+    border: 1px solid black; /* Temporary border to see the container */
+}
+
+
+
+@keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+  
