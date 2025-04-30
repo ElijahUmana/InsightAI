@@ -28,4 +28,4 @@ InsightAI is an integrated learning environment that allows users to pursue thei
 - **Text-to-Speech**: Integrates with Eleven Labs' text-to-speech, delivering responses with minimal latency via WebSocket.
 - **Database**: Utilizes Redis for temporary data storage and MongoDB for persistent user data.
 - **Frontend**: Developed using React and Node.js, optimized for asynchronous functions and WebSocket to enhance application responsiveness.
-- **Chrome Extension**: Created with JavaScript, HTML, CSS, and manifest.json for a smooth user experience.
+- **Chrome Extension**: Created with JavaScript, HTML, CSS, and manifest.json for a smooth user experience. 
